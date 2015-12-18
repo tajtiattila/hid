@@ -28,12 +28,12 @@ func init() {
 	}
 }
 
-func findDevices() ([]Device, error) {
+func findDevices() ([]string, error) {
 	dis, err := SetupDiGetClassDevs(&hidClassGuid, nil, 0, DIGCF_PRESENT|DIGCF_DEVICEINTERFACE)
 	if err != nil {
-		panic(1)
 		return nil, err
 	}
+	defer SetupDiDestroyDeviceInfoList(dis)
 
 	var idata SP_DEVINFO_DATA
 	idata.cbSize = uint32(unsafe.Sizeof(idata))
@@ -41,37 +41,22 @@ func findDevices() ([]Device, error) {
 	var edata SP_DEVICE_INTERFACE_DATA
 	edata.cbSize = uint32(unsafe.Sizeof(edata))
 
-	var v []Device
+	var v []string
 	for i := uint32(0); SetupDiEnumDeviceInfo(dis, i, &idata) == nil; i++ {
 		for j := uint32(0); SetupDiEnumDeviceInterfaces(dis, &idata, &hidClassGuid, j, &edata) == nil; j++ {
 
-			d, err := makeDevice(dis, &idata, &edata)
+			p, err := getDevicePath(dis, &edata, nil)
 			if err != nil {
 				return nil, err
 			}
 
-			/*
-				p, err := getDeviceInterfaceDetail(dis, &edata, nil)
-				if err != nil {
-					return nil, err
-				}
-
-				s, err := getBusReportedDeviceDescription(dis, &idata)
-				if err != nil {
-					s, err = getRegistryDeviceDescription(dis, &idata)
-					if err != nil {
-						return nil, err
-					}
-				}
-			*/
-
-			v = append(v, d)
+			v = append(v, p)
 		}
 	}
 	return v, nil
 }
 
-func getDeviceInterfaceDetail(dis HDEVINFO, edata *SP_DEVICE_INTERFACE_DATA,
+func getDevicePath(dis HDEVINFO, edata *SP_DEVICE_INTERFACE_DATA,
 	devInfData *SP_DEVINFO_DATA) (detail string, err error) {
 
 	var bufsize uint32
@@ -140,47 +125,32 @@ func getRegistryDeviceDescription(dis HDEVINFO, devInfoData *SP_DEVINFO_DATA) (s
 	return utf16BytesToString(buf), nil
 }
 
-func makeDevice(dis HDEVINFO,
-	idata *SP_DEVINFO_DATA,
-	edata *SP_DEVICE_INTERFACE_DATA) (d Device, err error) {
-	d.Path, err = getDeviceInterfaceDetail(dis, edata, nil)
-	if err != nil {
-		return d, err
+func IsAccess(err error) bool {
+	if os.IsPermission(err) {
+		return true
 	}
+	if errc, _ := err.(syscall.Errno); errc == 32 {
+		// ERROR_SHARING_VIOLATION
+		return true
+	}
+	return false
+}
 
-	d.Desc, err = getBusReportedDeviceDescription(dis, idata)
+func (d *Device) DeviceInfo() (*DeviceInfo, error) {
+	i := &DeviceInfo{Name: d.Name()}
+	err := statHandle(syscall.Handle(d.Fd()), i)
 	if err != nil {
-		d.Desc, err = getRegistryDeviceDescription(dis, idata)
-		if err != nil {
-			return d, err
-		}
+		return nil, err
 	}
+	return i, nil
+}
 
-	fmt.Println(d.Path)
-	fn, err := syscall.UTF16PtrFromString(d.Path)
-	if err != nil {
-		return d, err
-	}
-	h, err := syscall.CreateFile(
-		fn,
-		syscall.GENERIC_READ, syscall.FILE_SHARE_READ,
-		nil, syscall.OPEN_EXISTING, 0, 0)
-	if err != nil {
-		if errc, _ := err.(syscall.Errno); errc == 32 {
-			// ERROR_SHARING_VIOLATION
-			return d, nil
-		}
-		if os.IsPermission(err) {
-			return d, nil
-		}
-		return d, err
-	}
-	defer syscall.CloseHandle(h)
+func statHandle(h syscall.Handle, d *DeviceInfo) error {
 
 	var attr HIDD_ATTRIBUTES
 	attr.size = uint32(unsafe.Sizeof(attr))
 	if err := HidD_GetAttributes(h, &attr); err != nil {
-		return d, err
+		return err
 	}
 
 	d.Attr = &Attr{
@@ -191,35 +161,36 @@ func makeDevice(dis HDEVINFO,
 
 	var prepd uintptr
 	if err := HidD_GetParsedData(h, &prepd); err != nil {
-		return d, err
+		return err
 	}
 	defer HidD_FreePreparsedData(prepd)
 
 	var caps HIDP_CAPS
 	if errc := HidP_GetCaps(prepd, &caps); errc != HIDP_STATUS_SUCCESS {
-		return d, fmt.Errorf("hid.GetCaps() failed with error code %#x", errc)
+		return fmt.Errorf("hid.GetCaps() failed with error code %#x", errc)
 	}
 
 	d.Caps = &Caps{
-		caps.Usage,
-		caps.UsagePage,
-		caps.InputReportByteLength,
-		caps.OutputReportByteLength,
-		caps.FeatureReportByteLength,
+		Usage:     caps.Usage,
+		UsagePage: caps.UsagePage,
 
-		caps.NumberLinkCollectionNodes,
-		caps.NumberInputButtonCaps,
-		caps.NumberInputValueCaps,
-		caps.NumberInputDataIndices,
-		caps.NumberOutputButtonCaps,
-		caps.NumberOutputValueCaps,
-		caps.NumberOutputDataIndices,
-		caps.NumberFeatureButtonCaps,
-		caps.NumberFeatureValueCaps,
-		caps.NumberFeatureDataIndices,
+		InputLen:   int(caps.InputReportByteLength),
+		OutputLen:  int(caps.OutputReportByteLength),
+		FeatureLen: int(caps.FeatureReportByteLength),
+
+		NumLinkCollectionNodes: int(caps.NumberLinkCollectionNodes),
+		NumInputButtonCaps:     int(caps.NumberInputButtonCaps),
+		NumInputValueCaps:      int(caps.NumberInputValueCaps),
+		NumInputDataIndices:    int(caps.NumberInputDataIndices),
+		NumOutputButtonCaps:    int(caps.NumberOutputButtonCaps),
+		NumOutputValueCaps:     int(caps.NumberOutputValueCaps),
+		NumOutputDataIndices:   int(caps.NumberOutputDataIndices),
+		NumFeatureButtonCaps:   int(caps.NumberFeatureButtonCaps),
+		NumFeatureValueCaps:    int(caps.NumberFeatureValueCaps),
+		NumFeatureDataIndices:  int(caps.NumberFeatureDataIndices),
 	}
 
-	return d, nil
+	return nil
 }
 
 func utf16BytesToString(p []byte) string {
