@@ -7,7 +7,7 @@ func TestFindDevices(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, d := range ds {
-		t.Log(d.Path)
+	for i, d := range ds {
+		t.Logf("%v %q %q", i, d.Path, d.Desc)
 	}
 }

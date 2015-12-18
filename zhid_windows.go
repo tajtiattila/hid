@@ -11,12 +11,18 @@ var (
 	modsetupapi = syscall.NewLazyDLL("setupapi.dll")
 	modhid      = syscall.NewLazyDLL("hid.dll")
 
-	procSetupDiGetClassDevsW             = modsetupapi.NewProc("SetupDiGetClassDevsW")
-	procSetupDiEnumDeviceInfo            = modsetupapi.NewProc("SetupDiEnumDeviceInfo")
-	procSetupDiEnumDeviceInterfaces      = modsetupapi.NewProc("SetupDiEnumDeviceInterfaces")
-	procSetupDiDestroyDeviceInfoList     = modsetupapi.NewProc("SetupDiDestroyDeviceInfoList")
-	procSetupDiGetDeviceInterfaceDetailW = modsetupapi.NewProc("SetupDiGetDeviceInterfaceDetailW")
-	procHidD_GetHidGuid                  = modhid.NewProc("HidD_GetHidGuid")
+	procSetupDiGetClassDevsW              = modsetupapi.NewProc("SetupDiGetClassDevsW")
+	procSetupDiEnumDeviceInfo             = modsetupapi.NewProc("SetupDiEnumDeviceInfo")
+	procSetupDiEnumDeviceInterfaces       = modsetupapi.NewProc("SetupDiEnumDeviceInterfaces")
+	procSetupDiDestroyDeviceInfoList      = modsetupapi.NewProc("SetupDiDestroyDeviceInfoList")
+	procSetupDiGetDeviceInterfaceDetailW  = modsetupapi.NewProc("SetupDiGetDeviceInterfaceDetailW")
+	procSetupDiGetDevicePropertyW         = modsetupapi.NewProc("SetupDiGetDevicePropertyW")
+	procSetupDiGetDeviceRegistryPropertyW = modsetupapi.NewProc("SetupDiGetDeviceRegistryPropertyW")
+	procHidD_GetHidGuid                   = modhid.NewProc("HidD_GetHidGuid")
+	procHidD_GetAttributes                = modhid.NewProc("HidD_GetAttributes")
+	procHidD_GetPreparsedData             = modhid.NewProc("HidD_GetPreparsedData")
+	procHidD_FreePreparsedData            = modhid.NewProc("HidD_FreePreparsedData")
+	procHidP_GetCaps                      = modhid.NewProc("HidP_GetCaps")
 )
 
 func SetupDiGetClassDevs(classGuid *GUID, enumerator *uint16, hwndParent HWND, flags uint32) (handle HDEVINFO, err error) {
@@ -32,15 +38,27 @@ func SetupDiGetClassDevs(classGuid *GUID, enumerator *uint16, hwndParent HWND, f
 	return
 }
 
-func SetupDiEnumDeviceInfo(devInfoSet HDEVINFO, memberIndex uint32, devInfoData *SP_DEVINFO_DATA) (ok bool) {
-	r0, _, _ := syscall.Syscall(procSetupDiEnumDeviceInfo.Addr(), 3, uintptr(devInfoSet), uintptr(memberIndex), uintptr(unsafe.Pointer(devInfoData)))
-	ok = r0 != 0
+func SetupDiEnumDeviceInfo(devInfoSet HDEVINFO, memberIndex uint32, devInfoData *SP_DEVINFO_DATA) (err error) {
+	r1, _, e1 := syscall.Syscall(procSetupDiEnumDeviceInfo.Addr(), 3, uintptr(devInfoSet), uintptr(memberIndex), uintptr(unsafe.Pointer(devInfoData)))
+	if r1 == 0 {
+		if e1 != 0 {
+			err = error(e1)
+		} else {
+			err = syscall.EINVAL
+		}
+	}
 	return
 }
 
-func SetupDiEnumDeviceInterfaces(devInfoSet HDEVINFO, devInfoData *SP_DEVINFO_DATA, intfClassGuid *GUID, memberIndex uint32, devIntfData *SP_DEVICE_INTERFACE_DATA) (ok bool) {
-	r0, _, _ := syscall.Syscall6(procSetupDiEnumDeviceInterfaces.Addr(), 5, uintptr(devInfoSet), uintptr(unsafe.Pointer(devInfoData)), uintptr(unsafe.Pointer(intfClassGuid)), uintptr(memberIndex), uintptr(unsafe.Pointer(devIntfData)), 0)
-	ok = r0 != 0
+func SetupDiEnumDeviceInterfaces(devInfoSet HDEVINFO, devInfoData *SP_DEVINFO_DATA, intfClassGuid *GUID, memberIndex uint32, devIntfData *SP_DEVICE_INTERFACE_DATA) (err error) {
+	r1, _, e1 := syscall.Syscall6(procSetupDiEnumDeviceInterfaces.Addr(), 5, uintptr(devInfoSet), uintptr(unsafe.Pointer(devInfoData)), uintptr(unsafe.Pointer(intfClassGuid)), uintptr(memberIndex), uintptr(unsafe.Pointer(devIntfData)), 0)
+	if r1 == 0 {
+		if e1 != 0 {
+			err = error(e1)
+		} else {
+			err = syscall.EINVAL
+		}
+	}
 	return
 }
 
@@ -68,7 +86,73 @@ func SetupDiGetDeviceInterfaceDetail(devInfoSet HDEVINFO, dintfdata *SP_DEVICE_I
 	return
 }
 
+func SetupDiGetDeviceProperty(devInfoSet HDEVINFO, devInfoData *SP_DEVINFO_DATA, propKey *DEVPROPKEY, propType *uint32, propBuf *byte, propBufSize uint32, reqsize *uint32, flags uint32) (err error) {
+	r1, _, e1 := syscall.Syscall9(procSetupDiGetDevicePropertyW.Addr(), 8, uintptr(devInfoSet), uintptr(unsafe.Pointer(devInfoData)), uintptr(unsafe.Pointer(propKey)), uintptr(unsafe.Pointer(propType)), uintptr(unsafe.Pointer(propBuf)), uintptr(propBufSize), uintptr(unsafe.Pointer(reqsize)), uintptr(flags), 0)
+	if r1 == 0 {
+		if e1 != 0 {
+			err = error(e1)
+		} else {
+			err = syscall.EINVAL
+		}
+	}
+	return
+}
+
+func SetupDiGetDeviceRegistryProperty(devInfoSet HDEVINFO, devInfoData *SP_DEVINFO_DATA, prop uint32, propRegDataType *uint32, propBuf *byte, propBufSize uint32, reqsize *uint32) (err error) {
+	r1, _, e1 := syscall.Syscall9(procSetupDiGetDeviceRegistryPropertyW.Addr(), 7, uintptr(devInfoSet), uintptr(unsafe.Pointer(devInfoData)), uintptr(prop), uintptr(unsafe.Pointer(propRegDataType)), uintptr(unsafe.Pointer(propBuf)), uintptr(propBufSize), uintptr(unsafe.Pointer(reqsize)), 0, 0)
+	if r1 == 0 {
+		if e1 != 0 {
+			err = error(e1)
+		} else {
+			err = syscall.EINVAL
+		}
+	}
+	return
+}
+
 func HidD_GetHidGuid(hidGuid *GUID) {
 	syscall.Syscall(procHidD_GetHidGuid.Addr(), 1, uintptr(unsafe.Pointer(hidGuid)), 0, 0)
+	return
+}
+
+func HidD_GetAttributes(h syscall.Handle, a *HIDD_ATTRIBUTES) (err error) {
+	r1, _, e1 := syscall.Syscall(procHidD_GetAttributes.Addr(), 2, uintptr(h), uintptr(unsafe.Pointer(a)), 0)
+	if r1 == 0 {
+		if e1 != 0 {
+			err = error(e1)
+		} else {
+			err = syscall.EINVAL
+		}
+	}
+	return
+}
+
+func HidD_GetParsedData(h syscall.Handle, preparsedData *uintptr) (err error) {
+	r1, _, e1 := syscall.Syscall(procHidD_GetPreparsedData.Addr(), 2, uintptr(h), uintptr(unsafe.Pointer(preparsedData)), 0)
+	if r1 == 0 {
+		if e1 != 0 {
+			err = error(e1)
+		} else {
+			err = syscall.EINVAL
+		}
+	}
+	return
+}
+
+func HidD_FreePreparsedData(preparsedData uintptr) (err error) {
+	r1, _, e1 := syscall.Syscall(procHidD_FreePreparsedData.Addr(), 1, uintptr(preparsedData), 0, 0)
+	if r1 == 0 {
+		if e1 != 0 {
+			err = error(e1)
+		} else {
+			err = syscall.EINVAL
+		}
+	}
+	return
+}
+
+func HidP_GetCaps(preparsedData uintptr, caps *HIDP_CAPS) (errCode uint32) {
+	r0, _, _ := syscall.Syscall(procHidP_GetCaps.Addr(), 2, uintptr(preparsedData), uintptr(unsafe.Pointer(caps)), 0)
+	errCode = uint32(r0)
 	return
 }
