@@ -25,8 +25,8 @@ const (
 	L3      = 1 << 14
 	R3      = 1 << 15
 
-	PS       = 1 << 16
-	Touchpad = 1 << 17
+	PS    = 1 << 16
+	Click = 1 << 17 // touchpad
 )
 
 // State represents the controller state.
@@ -41,13 +41,13 @@ type State struct {
 	Button uint32
 
 	// accelerometer
-	XAcc, YAcc, ZAcc uint16
+	XAcc, YAcc, ZAcc int16
 
 	// gyroscope
-	XGyro, YGyro, ZGyro uint16
+	XGyro, YGyro, ZGyro int16
 
 	// battery
-	Battery byte // bit 5: charging, bits: 0-4 charge percent/10
+	Battery byte // bit 5: charging, bits: 0-4 battery level percentage/10
 
 	// Packet is a counter incremented whenever there is touch input
 	Packet byte
@@ -56,6 +56,11 @@ type State struct {
 	Touch [2]Touch
 }
 
+const (
+	TouchInactive = 0x80
+	TouchIdMask   = 0x7f
+)
+
 // Touch represents a single touch.
 type Touch struct {
 	// bit 7: set when touch is active
@@ -63,7 +68,7 @@ type Touch struct {
 	Id byte
 
 	// 12-bit touch positions
-	X, Y uint16
+	X, Y int16
 }
 
 var dpadStr = []string{
@@ -94,7 +99,7 @@ func (s *State) String() string {
 	fmt.Fprintf(&buf, " %02x", s.Packet)
 	for i := 0; i < 2; i++ {
 		t := s.Touch[i]
-		if t.Id&0x80 == 0 {
+		if t.Id&TouchInactive == 0 {
 			fmt.Fprintf(&buf, " T(%02x %4d %4d)", t.Id&0x7f, t.X, t.Y)
 		}
 	}
@@ -129,15 +134,48 @@ func (s *State) Decode(p []byte) error {
 	return nil
 }
 
-func u16triplet(p []byte) (x, y, z uint16) {
-	x = uint16(p[0])<<8 | uint16(p[1])
-	y = uint16(p[2])<<8 | uint16(p[3])
-	z = uint16(p[4])<<8 | uint16(p[5])
+func (s *State) GyroRoll() float64 {
+	return GyroRoll(s.XGyro, s.YGyro, s.ZGyro)
+}
+
+func (s *State) GyroPitch() float64 {
+	return GyroPitch(s.XGyro, s.YGyro, s.ZGyro)
+}
+
+func (s *State) GyroRollPitch() (roll, pitch float64, ok bool) {
+	return GyroRollPitch(s.XGyro, s.YGyro, s.ZGyro)
+}
+
+func (s *State) NTouch() int {
+	ntouch := 0
+	if s.Touch[0].Id&TouchInactive == 0 {
+		ntouch++
+		if s.Touch[1].Id&TouchInactive == 0 {
+			ntouch++
+		}
+	}
+	return ntouch
+}
+
+func (s *State) Finger(fid byte) *Touch {
+	if s.Touch[0].Id == fid {
+		return &s.Touch[0]
+	}
+	if s.Touch[1].Id == fid {
+		return &s.Touch[1]
+	}
+	return nil
+}
+
+func u16triplet(p []byte) (x, y, z int16) {
+	x = int16(p[0])<<8 | int16(p[1])
+	y = int16(p[2])<<8 | int16(p[3])
+	z = int16(p[4])<<8 | int16(p[5])
 	return
 }
 
 func decodeTouch(p []byte, t *Touch) {
 	t.Id = p[0]
-	t.X = uint16(p[2]&0x0f)<<8 | uint16(p[1])
-	t.Y = uint16(p[3])<<4 | uint16(p[2]&0xf0)>>4
+	t.X = int16(p[2]&0x0f)<<8 | int16(p[1])
+	t.Y = int16(p[3])<<4 | (int16(p[2])&0xf0)>>4
 }

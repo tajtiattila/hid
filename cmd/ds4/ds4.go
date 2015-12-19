@@ -5,17 +5,23 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"math"
 	"os"
+	"time"
 
 	"github.com/tajtiattila/hid"
 	"github.com/tajtiattila/hid/ds4"
 )
 
-var serialno string
+var (
+	serialno string
+	touch    bool
+	verbose  bool
+)
 
 func main() {
-	flag.StringVar(&serialno, "-sno", "", "Device serial number to use")
+	flag.StringVar(&serialno, "sno", "", "Device serial number to use")
+	flag.BoolVar(&touch, "touch", false, "Touch test")
+	flag.BoolVar(&verbose, "v", false, "Verbose output")
 	flag.Parse()
 
 	var dlist []*hid.DeviceInfo
@@ -80,7 +86,14 @@ func main() {
 		close(ch)
 	}()
 
-	var max int
+	var f func(s *ds4.State)
+	if touch {
+		tt := NewTouchTest()
+		f = tt.Run
+	} else {
+		f = InputTest
+	}
+
 	for {
 		select {
 		case <-ch:
@@ -103,40 +116,63 @@ func main() {
 		if err := s.Decode(ibuf); err != nil {
 			continue
 		}
-		fmt.Print("\r", s.String())
 
-		x, y, z := absgyro(s.XGyro), absgyro(s.YGyro), absgyro(s.ZGyro)
-		if max < x {
-			max = x
-		}
-		if max < y {
-			max = y
-		}
-		if max < z {
-			max = z
-		}
-
-		xf, yf, zf := flt(s.XGyro), flt(s.YGyro), flt(s.ZGyro)
-
-		//p := ibuf[2:]
-		//dumpbytes(p[34:], 32)
-		fmt.Printf(" %5d %8.2f", max, math.Sqrt(xf*xf+yf*yf+zf*zf))
-
-		// clear to end of buffer
-		os.Stdout.Write([]byte{27, '[', 'J'})
+		f(&s)
+		//dumpbytes(ibuf[20:], 32)
 	}
 }
 
-func absgyro(raw uint16) int {
-	v := int(int16(raw))
+func InputTest(s *ds4.State) {
+	fmt.Print("\r", s.String())
+
+	gr, gp, ok := s.GyroRollPitch()
+	ls := "ok  "
+	if !ok {
+		ls = "lock"
+	}
+	fmt.Printf(" GX(%5.1f %5.1f %s)", gr, gp, ls)
+
+	// clear to end of buffer
+	os.Stdout.Write([]byte{27, '[', 'J'})
+}
+
+type TouchTest struct {
+	pad     *ds4.Touchpad
+	lastpkt byte
+	buf     bytes.Buffer
+}
+
+func NewTouchTest() *TouchTest {
+	return &TouchTest{
+		pad: ds4.NewTouchpad(),
+	}
+}
+
+func (t *TouchTest) Run(s *ds4.State) {
+	t.pad.Tick(s)
+	if s.Packet == t.lastpkt {
+		if t.buf.Len() != 0 {
+			t.buf.WriteTo(os.Stdout)
+			t.buf.Reset()
+		}
+		return
+	}
+	t.lastpkt = s.Packet
+	if verbose {
+		fmt.Fprintln(&t.buf, time.Now().Format("15:04:05.000"), s.String())
+	}
+}
+
+func absgyro(raw int16) int {
+	v := int(raw)
 	if v < 0 {
 		v = -v
 	}
 	return v
 }
 
-func flt(raw uint16) float64 {
-	return float64(int16(raw))
+func flt(raw int16) float64 {
+	return float64(raw)
 }
 
 var hexbytes = []byte("0123456789abcdef")
