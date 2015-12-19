@@ -71,7 +71,25 @@ func main() {
 		return
 	}
 
+	ch := make(chan struct{})
+	go func() {
+		buf := make([]byte, 1)
+		os.Stdin.Read(buf)
+		close(ch)
+	}()
+
 	for {
+		select {
+		case <-ch:
+			fmt.Println()
+			err := d.DisconnectRadio()
+			if err != nil {
+				log.Println(err)
+			}
+			return
+		default:
+		}
+
 		_, err := d.Read(ibuf)
 		if err != nil {
 			log.Println(err)
@@ -178,6 +196,7 @@ func (s *RawState) String() string {
 	fmt.Fprintf(&buf, "L(%+4d %+4d) R(%+4d %+4d) ",
 		int(s.LX)-128, int(s.LY)-128,
 		int(s.RX)-128, int(s.RY)-128)
+	fmt.Fprintf(&buf, " 2(%3d %3d)", s.L2, s.R2)
 	buf.WriteString(dpadStr[s.Button&0xF])
 	buf.WriteByte(' ')
 	for i := uint(0); i < 14; i++ {

@@ -40,6 +40,15 @@ func (d *Device) SetOutputReport(p []byte) error {
 		uint32(len(p)))
 }
 
+// Disconnect device radio, assuming it's using bluetooth.
+func (d *Device) DisconnectRadio() error {
+	di, err := d.DeviceInfo()
+	if err != nil {
+		return err
+	}
+	return platform.DisconnectBluetooth(di.Attr.SerialNo)
+}
+
 func statHandle(h syscall.Handle, d *DeviceInfo) error {
 
 	var attr platform.HIDD_ATTRIBUTES
