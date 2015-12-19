@@ -83,7 +83,11 @@ func main() {
 			continue
 		}
 		fmt.Print("\r", s.String())
-		dumpbytes(ibuf[28:], 32)
+		//p := ibuf[2:]
+		//dumpbytes(p[34:], 32)
+
+		// clear to end of buffer
+		os.Stdout.Write([]byte{27, '[', 'J'})
 	}
 }
 
@@ -105,9 +109,6 @@ func dumpbytes(p []byte, max int) {
 		buf.WriteByte(hexbytes[b>>4])
 		buf.WriteByte(hexbytes[b&15])
 	}
-	buf.WriteByte(27)
-	buf.WriteByte('[')
-	buf.WriteByte('J')
 	os.Stdout.Write(buf.Bytes())
 }
 
@@ -148,6 +149,23 @@ type RawState struct {
 
 	// gyro
 	XGyro, YGyro, ZGyro uint16
+
+	// battery
+	Battery byte // bit 5: charging, bits: 0-4 charge percent/10
+
+	// touch input
+	Packet byte // packet counter changes if there is touch input
+	Touch  [2]RawTouch
+}
+
+// RawTouch is a raw touch event.
+type RawTouch struct {
+	// bit 7: set when touch is active
+	// bits 0-6: finger id incremented by every new touch
+	Id byte
+
+	// 12-bit touch positions
+	X, Y uint16
 }
 
 var dpadStr = []string{
@@ -169,11 +187,18 @@ func (s *RawState) String() string {
 			buf.WriteByte('.')
 		}
 	}
-	buf.WriteByte(' ')
 	x := int(int16(s.XGyro)) / 64
 	y := int(int16(s.YGyro)) / 64
 	z := int(int16(s.ZGyro)) / 64
-	fmt.Fprintf(&buf, "G(%+4d %+4d %+4d)", x, y, z)
+	fmt.Fprintf(&buf, " G(%+4d %+4d %+4d)", x, y, z)
+	fmt.Fprintf(&buf, " %02x", s.Battery)
+	fmt.Fprintf(&buf, " %02x", s.Packet)
+	for i := 0; i < 2; i++ {
+		t := s.Touch[i]
+		if t.Id&0x80 == 0 {
+			fmt.Fprintf(&buf, " T(%02x %4d %4d)", t.Id&0x7f, t.X, t.Y)
+		}
+	}
 	return buf.String()
 }
 
@@ -195,6 +220,13 @@ func (s *RawState) Decode(p []byte) error {
 
 	s.XAcc, s.YAcc, s.ZAcc = u16triplet(p[14:20])
 	s.XGyro, s.YGyro, s.ZGyro = u16triplet(p[20:26])
+
+	s.Battery = p[30]
+
+	s.Packet = p[34]
+	decodeTouch(p[35:39], &s.Touch[0])
+	decodeTouch(p[39:43], &s.Touch[1])
+
 	return nil
 }
 
@@ -203,4 +235,10 @@ func u16triplet(p []byte) (x, y, z uint16) {
 	y = uint16(p[2])<<8 | uint16(p[3])
 	z = uint16(p[4])<<8 | uint16(p[5])
 	return
+}
+
+func decodeTouch(p []byte, t *RawTouch) {
+	t.Id = p[0]
+	t.X = uint16(p[2]&0x0f)<<8 | uint16(p[1])
+	t.Y = uint16(p[3])<<4 | uint16(p[2]&0xf0)>>4
 }
