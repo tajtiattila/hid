@@ -33,6 +33,13 @@ func (d *Device) DeviceInfo() (*DeviceInfo, error) {
 	return i, nil
 }
 
+func (d *Device) SetOutputReport(p []byte) error {
+	return platform.HidD_SetOutputReport(
+		syscall.Handle(d.Fd()),
+		&p[0],
+		uint32(len(p)))
+}
+
 func statHandle(h syscall.Handle, d *DeviceInfo) error {
 
 	var attr platform.HIDD_ATTRIBUTES
@@ -40,10 +47,16 @@ func statHandle(h syscall.Handle, d *DeviceInfo) error {
 		return err
 	}
 
+	sno, err := platform.GetSerialNo(h)
+	if err != nil {
+		return err
+	}
+
 	d.Attr = &Attr{
-		attr.VendorID,
-		attr.ProductID,
-		attr.VersionNumber,
+		VendorId:  attr.VendorID,
+		ProductId: attr.ProductID,
+		Version:   attr.VersionNumber,
+		SerialNo:  sno,
 	}
 
 	var prepd uintptr

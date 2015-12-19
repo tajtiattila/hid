@@ -23,6 +23,8 @@ var (
 	procHidD_GetPreparsedData             = modhid.NewProc("HidD_GetPreparsedData")
 	procHidD_FreePreparsedData            = modhid.NewProc("HidD_FreePreparsedData")
 	procHidP_GetCaps                      = modhid.NewProc("HidP_GetCaps")
+	procHidD_GetSerialNumberString        = modhid.NewProc("HidD_GetSerialNumberString")
+	procHidD_SetOutputReport              = modhid.NewProc("HidD_SetOutputReport")
 )
 
 func SetupDiGetClassDevs(classGuid *GUID, enumerator *uint16, hwndParent HWND, flags uint32) (handle HDEVINFO, err error) {
@@ -154,5 +156,29 @@ func HidD_FreePreparsedData(preparsedData uintptr) (err error) {
 func HidP_GetCaps(preparsedData uintptr, caps *HIDP_CAPS) (errCode uint32) {
 	r0, _, _ := syscall.Syscall(procHidP_GetCaps.Addr(), 2, uintptr(preparsedData), uintptr(unsafe.Pointer(caps)), 0)
 	errCode = uint32(r0)
+	return
+}
+
+func HidD_GetSerialNumberString(h syscall.Handle, buf *uint16, buflen uint32) (err error) {
+	r1, _, e1 := syscall.Syscall(procHidD_GetSerialNumberString.Addr(), 3, uintptr(h), uintptr(unsafe.Pointer(buf)), uintptr(buflen))
+	if r1 == 0 {
+		if e1 != 0 {
+			err = error(e1)
+		} else {
+			err = syscall.EINVAL
+		}
+	}
+	return
+}
+
+func HidD_SetOutputReport(h syscall.Handle, buf *byte, buflen uint32) (err error) {
+	r1, _, e1 := syscall.Syscall(procHidD_SetOutputReport.Addr(), 3, uintptr(h), uintptr(unsafe.Pointer(buf)), uintptr(buflen))
+	if r1 == 0 {
+		if e1 != 0 {
+			err = error(e1)
+		} else {
+			err = syscall.EINVAL
+		}
+	}
 	return
 }

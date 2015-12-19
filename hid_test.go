@@ -18,7 +18,7 @@ func TestFindVendorDevices(t *testing.T) {
 		t.Fatal(err)
 	}
 	for i, di := range v {
-		t.Logf("%v %q %v %v\n", i, di.Name, di.Caps.InputLen, di.Caps.OutputLen)
+		t.Logf("%v %q %q %v %v\n", i, di.Name, di.Attr.SerialNo, di.Caps.InputLen, di.Caps.OutputLen)
 	}
 }
 

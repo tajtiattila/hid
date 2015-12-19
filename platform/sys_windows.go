@@ -140,6 +140,24 @@ func GetAttributes(h syscall.Handle, attr *HIDD_ATTRIBUTES) error {
 	return HidD_GetAttributes(h, attr)
 }
 
+func GetSerialNo(h syscall.Handle) (string, error) {
+	buf := make([]uint16, 256)
+	if err := HidD_GetSerialNumberString(h, &buf[0], uint32(len(buf)-1)); err != nil {
+		return "", nil
+	}
+	sno := make([]uint16, 0, 256)
+	for i, r := range buf {
+		if r == 0 {
+			break
+		}
+		if i != 0 && i%2 == 0 {
+			sno = append(sno, ':')
+		}
+		sno = append(sno, r)
+	}
+	return string(utf16.Decode(sno)), nil
+}
+
 func utf16BytesToString(p []byte) string {
 	u := make([]uint16, len(p)/2)
 	l := 0
@@ -249,3 +267,5 @@ const (
 //sys HidD_GetParsedData(h syscall.Handle, preparsedData *uintptr) (err error) = hid.HidD_GetPreparsedData
 //sys HidD_FreePreparsedData(preparsedData uintptr) (err error) = hid.HidD_FreePreparsedData
 //sys HidP_GetCaps(preparsedData uintptr, caps *HIDP_CAPS) (errCode uint32) = hid.HidP_GetCaps
+//sys HidD_GetSerialNumberString(h syscall.Handle, buf *uint16, buflen uint32) (err error) = hid.HidD_GetSerialNumberString
+//sys HidD_SetOutputReport(h syscall.Handle, buf *byte, buflen uint32) (err error) = hid.HidD_SetOutputReport

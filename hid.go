@@ -6,14 +6,14 @@ import (
 	"github.com/tajtiattila/hid/platform"
 )
 
-// FindDevices lists all available HID devices.
-func FindDevices() ([]string, error) {
+// Names lists the names of all available HID devices.
+func Names() ([]string, error) {
 	return platform.FindDevices()
 }
 
-// FindVendorDevices finds accessible devices having the specified vendor and product IDs.
-func FindVendorDevices(vendor uint16, products ...uint16) ([]*DeviceInfo, error) {
-	v, err := FindDevices()
+// VendorDevices finds accessible devices having the specified vendor and product IDs.
+func VendorDevices(vendor uint16, products ...uint16) ([]*DeviceInfo, error) {
+	v, err := Names()
 	if err != nil {
 		return nil, err
 	}
@@ -34,6 +34,28 @@ func FindVendorDevices(vendor uint16, products ...uint16) ([]*DeviceInfo, error)
 				vv = append(vv, i)
 				break
 			}
+		}
+	}
+	return vv, nil
+}
+
+// SerialNo finds accessible devices having the specified serial number.
+func SerialNo(sno string) ([]*DeviceInfo, error) {
+	v, err := Names()
+	if err != nil {
+		return nil, err
+	}
+	var vv []*DeviceInfo
+	for _, n := range v {
+		i, err := Stat(n)
+		if err != nil {
+			if IsAccess(err) {
+				continue
+			}
+			return nil, err
+		}
+		if i.Attr.SerialNo == sno {
+			vv = append(vv, i)
 		}
 	}
 	return vv, nil
@@ -74,6 +96,7 @@ type Attr struct {
 	VendorId  uint16
 	ProductId uint16
 	Version   uint16
+	SerialNo  string
 }
 
 type Caps struct {
