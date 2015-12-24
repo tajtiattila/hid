@@ -10,6 +10,7 @@ import (
 
 	"github.com/tajtiattila/hid"
 	"github.com/tajtiattila/hid/ds4"
+	"github.com/tajtiattila/hid/ds4/ds4util"
 )
 
 var (
@@ -40,34 +41,30 @@ func main() {
 		return
 	}
 	fmt.Println(len(dlist), "device(s) found")
-	di := dlist[0]
+	for i, di := range dlist {
+		fmt.Println(i, di.Name)
+	}
+
+	di := *dlist[0]
+	for _, xdi := range dlist[1:] {
+		if xdi.Caps.InputLen > di.Caps.InputLen {
+			di = *xdi
+		}
+	}
+
 	fmt.Print("i/o report length: ", di.Caps.InputLen, "/", di.Caps.OutputLen, "\n")
 
 	ibuf := make([]byte, di.Caps.InputLen)
-	obuf := make([]byte, di.Caps.OutputLen)
 
-	d, err := hid.Open(di.Name)
+	d, err := ds4.Open(di.Name)
 	if err != nil {
-		log.Println(err)
+		log.Println("opening device:", err)
 		return
 	}
 	defer d.Close()
 
-	obuf[0] = 0x11
-	obuf[1] = 0x80
-	obuf[3] = 0xff
-	obuf[6] = 0    //fast motor
-	obuf[7] = 0    //slow motor
-	obuf[8] = 0xff //red
-	obuf[9] = 0x88 //green
-	obuf[10] = 0   //blue
-	obuf[11] = 0   //flash on duration
-	obuf[12] = 0   //flash off duration
-	err = d.SetOutputReport(obuf)
-	if err != nil {
-		log.Println(err)
-		return
-	}
+	d.SetColor(ds4.Color{0xff, 0x88, 0x00})
+	//d.SetFlashColor(ds4.Color{255, 0, 0}, time.Second, time.Second)
 
 	n, err := d.Read(ibuf)
 	if n != 0 {
@@ -75,8 +72,17 @@ func main() {
 		fmt.Println()
 	}
 	if err != nil {
-		log.Println(err)
+		log.Println("initial read:", err)
 		return
+	}
+
+	var s ds4.State
+	if err := s.Decode(ibuf); err == nil {
+		var charging string
+		if s.Battery&0xf0 != 0 {
+			charging = " (charging)"
+		}
+		fmt.Printf("Battery: %v%%%s\n", 10*(s.Battery&0xf), charging)
 	}
 
 	ch := make(chan struct{})
@@ -86,10 +92,12 @@ func main() {
 		close(ch)
 	}()
 
-	var f func(s *ds4.State)
+	var f func(p []byte, s *ds4.State)
 	if touch {
 		tt := NewTouchTest()
-		f = tt.Run
+		f = func(p []byte, s *ds4.State) {
+			tt.Run(s)
+		}
 	} else {
 		f = InputTest
 	}
@@ -112,44 +120,47 @@ func main() {
 			return
 		}
 
-		var s ds4.State
 		if err := s.Decode(ibuf); err != nil {
 			continue
 		}
 
-		f(&s)
-		//dumpbytes(ibuf[20:], 32)
+		f(ibuf, &s)
 	}
 }
 
-func InputTest(s *ds4.State) {
-	fmt.Print("\r", s.String())
+func InputTest(ibuf []byte, s *ds4.State) {
+	fmt.Print("\r")
+	fmt.Print(s.String())
+	/*
 
-	gr, gp, ok := s.GyroRollPitch()
-	ls := "ok  "
-	if !ok {
-		ls = "lock"
-	}
-	fmt.Printf(" GX(%5.1f %5.1f %s)", gr, gp, ls)
+		gr, gp, ok := s.GyroRollPitch()
+		ls := "ok  "
+		if !ok {
+			ls = "lock"
+		}
+		fmt.Printf(" GX(%5.1f %5.1f %s)", gr, gp, ls)
+	*/
+
+	//dumpbytes(ibuf, 40)
 
 	// clear to end of buffer
 	os.Stdout.Write([]byte{27, '[', 'J'})
 }
 
 type TouchTest struct {
-	pad     *ds4.Touchpad
+	pad     *ds4util.SwipeLogic
 	lastpkt byte
 	buf     bytes.Buffer
 }
 
 func NewTouchTest() *TouchTest {
-	return &TouchTest{
-		pad: ds4.NewTouchpad(),
-	}
+	t := new(TouchTest)
+	t.pad = ds4util.NewSwipeLogic(t)
+	return t
 }
 
 func (t *TouchTest) Run(s *ds4.State) {
-	t.pad.Tick(s)
+	t.pad.HandleState(s)
 	if s.Packet == t.lastpkt {
 		if t.buf.Len() != 0 {
 			t.buf.WriteTo(os.Stdout)
@@ -161,6 +172,18 @@ func (t *TouchTest) Run(s *ds4.State) {
 	if verbose {
 		fmt.Fprintln(&t.buf, time.Now().Format("15:04:05.000"), s.String())
 	}
+}
+
+func (t *TouchTest) Swipe(dir, ntouch int) {
+	fmt.Println("Swipe:", dir, ntouch)
+}
+
+func (t *TouchTest) Touch(x, y int) {
+	fmt.Println("Touch:", x, y)
+}
+
+func (t *TouchTest) Click(x, y int) {
+	fmt.Println("Click:", x, y)
 }
 
 func absgyro(raw int16) int {

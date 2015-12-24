@@ -63,13 +63,15 @@ const (
 
 // Touch represents a single touch.
 type Touch struct {
-	// bit 7: set when touch is active
+	// bit 7: zero when touch is active
 	// bits 0-6: finger id incremented by every new touch
 	Id byte
 
 	// 12-bit touch positions
 	X, Y int16
 }
+
+func (t Touch) Active() bool { return t.Id&TouchInactive == 0 }
 
 var dpadStr = []string{
 	"N ", "NE", "E ", "SE", "S ", "SW", "W ", "NW",
@@ -99,7 +101,7 @@ func (s *State) String() string {
 	fmt.Fprintf(&buf, " %02x", s.Packet)
 	for i := 0; i < 2; i++ {
 		t := s.Touch[i]
-		if t.Id&TouchInactive == 0 {
+		if t.Active() {
 			fmt.Fprintf(&buf, " T(%02x %4d %4d)", t.Id&0x7f, t.X, t.Y)
 		}
 	}
@@ -107,12 +109,18 @@ func (s *State) String() string {
 }
 
 func (s *State) Decode(p []byte) error {
-	if p[0] != 0x11 {
-		// should we support 0x01?
-		return fmt.Errorf("Data packet %#x is not supported", p[0])
+	if len(p) == 0 {
+		return fmt.Errorf("short packet")
+	}
+	switch p[0] {
+	case 0x01:
+		// pass
+	case 0x11:
+		p = p[2:]
+	default:
+		return fmt.Errorf("unrecognised packet")
 	}
 
-	p = p[2:]
 	if len(p) < 43 {
 		return fmt.Errorf("short packet")
 	}
@@ -144,17 +152,6 @@ func (s *State) GyroPitch() float64 {
 
 func (s *State) GyroRollPitch() (roll, pitch float64, ok bool) {
 	return GyroRollPitch(s.XGyro, s.YGyro, s.ZGyro)
-}
-
-func (s *State) NTouch() int {
-	ntouch := 0
-	if s.Touch[0].Id&TouchInactive == 0 {
-		ntouch++
-		if s.Touch[1].Id&TouchInactive == 0 {
-			ntouch++
-		}
-	}
-	return ntouch
 }
 
 func (s *State) Finger(fid byte) *Touch {
