@@ -24,6 +24,7 @@ var (
 	procHidD_FreePreparsedData            = modhid.NewProc("HidD_FreePreparsedData")
 	procHidP_GetCaps                      = modhid.NewProc("HidP_GetCaps")
 	procHidD_GetSerialNumberString        = modhid.NewProc("HidD_GetSerialNumberString")
+	procHidD_GetFeature                   = modhid.NewProc("HidD_GetFeature")
 	procHidD_SetOutputReport              = modhid.NewProc("HidD_SetOutputReport")
 )
 
@@ -161,6 +162,18 @@ func HidP_GetCaps(preparsedData uintptr, caps *HIDP_CAPS) (errCode uint32) {
 
 func HidD_GetSerialNumberString(h syscall.Handle, buf *uint16, buflen uint32) (err error) {
 	r1, _, e1 := syscall.Syscall(procHidD_GetSerialNumberString.Addr(), 3, uintptr(h), uintptr(unsafe.Pointer(buf)), uintptr(buflen))
+	if r1 == 0 {
+		if e1 != 0 {
+			err = error(e1)
+		} else {
+			err = syscall.EINVAL
+		}
+	}
+	return
+}
+
+func HidD_GetFeature(h syscall.Handle, buf *byte, buflen uint32) (err error) {
+	r1, _, e1 := syscall.Syscall(procHidD_GetFeature.Addr(), 3, uintptr(h), uintptr(unsafe.Pointer(buf)), uintptr(buflen))
 	if r1 == 0 {
 		if e1 != 0 {
 			err = error(e1)

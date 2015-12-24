@@ -33,7 +33,7 @@ func main() {
 		dlist, err = hid.VendorDevices(0x54C, 0x5C4) // DualShock 4
 	}
 	if err != nil {
-		log.Println(err)
+		log.Println("device list:", err)
 		return
 	}
 	if len(dlist) == 0 {
@@ -42,7 +42,7 @@ func main() {
 	}
 	fmt.Println(len(dlist), "device(s) found")
 	for i, di := range dlist {
-		fmt.Println(i, di.Name)
+		fmt.Println(i, di.Name, di.Attr.SerialNo)
 	}
 
 	di := *dlist[0]

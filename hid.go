@@ -74,7 +74,7 @@ func Stat(name string) (*DeviceInfo, error) {
 func Open(name string) (*Device, error) {
 	f, err := asyncio.Open(name)
 	if err != nil {
-		return nil, err
+		return nil, newErr("ds4.Open", name, err)
 	}
 	return &Device{f}, nil
 }
@@ -117,4 +117,18 @@ type Caps struct {
 	NumFeatureButtonCaps   int
 	NumFeatureValueCaps    int
 	NumFeatureDataIndices  int
+}
+
+type Error struct {
+	Func string
+	Path string
+	Err  error
+}
+
+func (e *Error) Error() string {
+	return e.Func + " " + e.Path + ": " + e.Err.Error()
+}
+
+func newErr(f, p string, err error) error {
+	return &Error{f, p, err}
 }

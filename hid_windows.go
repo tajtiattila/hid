@@ -14,6 +14,9 @@ import (
 // the device is currently unavailable because of system
 // permissions or the device was opened with exclusive access.
 func IsAccess(err error) bool {
+	if xerr, ok := err.(*Error); ok {
+		err = xerr.Err
+	}
 	if os.IsPermission(err) {
 		return true
 	}
@@ -28,7 +31,7 @@ func (d *Device) DeviceInfo() (*DeviceInfo, error) {
 	i := &DeviceInfo{Name: d.Name()}
 	err := statHandle(syscall.Handle(d.Fd()), i)
 	if err != nil {
-		return nil, err
+		return nil, newErr("ds4.DeviceInfo", d.Name(), err)
 	}
 	return i, nil
 }
@@ -56,16 +59,11 @@ func statHandle(h syscall.Handle, d *DeviceInfo) error {
 		return err
 	}
 
-	sno, err := platform.GetSerialNo(h)
-	if err != nil {
-		return err
-	}
-
 	d.Attr = &Attr{
 		VendorId:  attr.VendorID,
 		ProductId: attr.ProductID,
 		Version:   attr.VersionNumber,
-		SerialNo:  sno,
+		SerialNo:  platform.GetSerialNo(h),
 	}
 
 	var prepd uintptr

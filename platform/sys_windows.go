@@ -4,6 +4,7 @@
 package platform
 
 import (
+	"fmt"
 	"os"
 	"runtime"
 	"syscall"
@@ -46,7 +47,7 @@ func FindDevices() ([]string, error) {
 
 			p, err := getDevicePath(dis, &edata, nil)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("GetDevicePath: %v", err)
 			}
 
 			v = append(v, p)
@@ -140,10 +141,10 @@ func GetAttributes(h syscall.Handle, attr *HIDD_ATTRIBUTES) error {
 	return HidD_GetAttributes(h, attr)
 }
 
-func GetSerialNo(h syscall.Handle) (string, error) {
+func GetSerialNo(h syscall.Handle) string {
 	buf := make([]uint16, 256)
 	if err := HidD_GetSerialNumberString(h, &buf[0], uint32(len(buf)-1)); err != nil {
-		return "", nil
+		return serialFromFeature(h, 0x12)
 	}
 	sno := make([]uint16, 0, 256)
 	for i, r := range buf {
@@ -155,7 +156,22 @@ func GetSerialNo(h syscall.Handle) (string, error) {
 		}
 		sno = append(sno, r)
 	}
-	return string(utf16.Decode(sno)), nil
+	s := string(utf16.Decode(sno))
+	if len(s) < 17 {
+		return serialFromFeature(h, 0x12)
+	}
+	return s
+}
+
+func serialFromFeature(h syscall.Handle, feat byte) string {
+	buf := make([]byte, 16)
+	buf[0] = feat
+	err := HidD_GetFeature(h, &buf[0], uint32(len(buf)))
+	if err != nil {
+		return ""
+	}
+	return fmt.Sprintf("%02x:%02x:%02x:%02x:%02x:%02x",
+		buf[6], buf[5], buf[4], buf[3], buf[2], buf[1])
 }
 
 func utf16BytesToString(p []byte) string {
@@ -268,4 +284,5 @@ const (
 //sys HidD_FreePreparsedData(preparsedData uintptr) (err error) = hid.HidD_FreePreparsedData
 //sys HidP_GetCaps(preparsedData uintptr, caps *HIDP_CAPS) (errCode uint32) = hid.HidP_GetCaps
 //sys HidD_GetSerialNumberString(h syscall.Handle, buf *uint16, buflen uint32) (err error) = hid.HidD_GetSerialNumberString
+//sys HidD_GetFeature(h syscall.Handle, buf *byte, buflen uint32) (err error) = hid.HidD_GetFeature
 //sys HidD_SetOutputReport(h syscall.Handle, buf *byte, buflen uint32) (err error) = hid.HidD_SetOutputReport
