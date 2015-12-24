@@ -116,11 +116,11 @@ type Color struct {
 }
 
 func dur(d time.Duration) byte {
+	if d <= 0 {
+		return 0
+	}
 	n := int64(d/time.Millisecond) / 10
 	if n == 0 {
-		if d == 0 {
-			return 0
-		}
 		return 1
 	}
 	if n <= 255 {

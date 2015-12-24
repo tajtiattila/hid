@@ -25,16 +25,14 @@ type SwipeHandler interface {
 type SwipeLogic struct {
 	Handler SwipeHandler
 
+	pkt byte
+
 	state swipeFunc
 
 	// swipeStart data
 	t0     time.Time // current touch start time
 	x0, y0 int
 	id     int // touch id
-
-	// swipeBegin data
-	xsum, ysum int64 // current sum of positions
-	n          int64 // positions summed so far
 
 	// swipeSwipe data
 	ntouch int
@@ -48,6 +46,10 @@ func NewSwipeLogic(h SwipeHandler) *SwipeLogic {
 }
 
 func (l *SwipeLogic) HandleState(s *ds4.State) {
+	if l.pkt == s.Packet {
+		return
+	}
+	l.pkt = s.Packet
 	l.state = l.state(l, s)
 }
 
@@ -57,13 +59,13 @@ const (
 	// a swipe is started when the first finger moved at
 	// least swipeStartDist within swipeBeginTime
 	swipeStartDist = 50
-	swipeBeginTime = 50 * time.Microsecond
+	swipeBeginTime = 100 * time.Millisecond
 
 	// swipeDist is the travel distance needed for a swipe
 	swipeDist = 300
 
 	// swipeMaxTime is the longest time to travel swipeDist
-	swipeMaxTime = 300 * time.Microsecond
+	swipeMaxTime = 300 * time.Millisecond
 )
 
 // swipeStart is the start state when no touch or click is active
@@ -73,10 +75,9 @@ func swipeStart(l *SwipeLogic, s *ds4.State) swipeFunc {
 		if s.Button&ds4.Click != 0 {
 			// pad clicked
 			l.Handler.Click(x, y)
-			return swipeClear
+			return swipeClick
 		}
 		l.t0, l.x0, l.y0, l.id = time.Now(), x, y, int(s.Touch[0].Id)
-		l.xsum, l.ysum, l.n = int64(x), int64(y), 1
 		return swipeBegin
 	}
 	return swipeStart
@@ -87,7 +88,7 @@ func swipeBegin(l *SwipeLogic, s *ds4.State) swipeFunc {
 	if s.Button&ds4.Click != 0 {
 		// pad clicked
 		l.Handler.Click(x, y)
-		return swipeClear
+		return swipeClick
 	}
 	if !s.Touch[0].Active() {
 		// released
@@ -97,7 +98,6 @@ func swipeBegin(l *SwipeLogic, s *ds4.State) swipeFunc {
 	if int(s.Touch[0].Id) != l.id {
 		return swipeClear
 	}
-	//ax, ay := int(l.xsum/l.n), int(l.ysum/l.n)
 	dx, dy := int64(x-l.x0), int64(y-l.y0)
 	if dx*dx+dy*dy > swipeStartDist*swipeStartDist {
 		// swipe started
@@ -165,6 +165,27 @@ func swipeTouch(l *SwipeLogic, s *ds4.State) swipeFunc {
 	}
 	l.Handler.Touch(x, y)
 	return swipeTouch
+}
+
+// swipeClick handles the state during clicking
+func swipeClick(l *SwipeLogic, s *ds4.State) swipeFunc {
+	if s.Button&ds4.Click == 0 {
+		return swipeNextClick
+	}
+	return swipeClick
+}
+
+// swipeNextClick handles the state after clicking
+func swipeNextClick(l *SwipeLogic, s *ds4.State) swipeFunc {
+	if s.Button&ds4.Click != 0 {
+		x, y := int(s.Touch[0].X), int(s.Touch[0].Y)
+		l.Handler.Click(x, y)
+		return swipeClick
+	}
+	if s.Touch[0].Active() || s.Touch[1].Active() {
+		return swipeNextClick
+	}
+	return swipeStart
 }
 
 // swipeClear waits until no touch or click is active

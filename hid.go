@@ -1,8 +1,7 @@
 package hid
 
 import (
-	"os"
-
+	"github.com/tajtiattila/hid/asyncio"
 	"github.com/tajtiattila/hid/platform"
 )
 
@@ -73,7 +72,7 @@ func Stat(name string) (*DeviceInfo, error) {
 
 // Open opens the specified device.
 func Open(name string) (*Device, error) {
-	f, err := os.OpenFile(name, os.O_RDWR, 0777)
+	f, err := asyncio.Open(name)
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +81,7 @@ func Open(name string) (*Device, error) {
 
 // Device is a HID device that statisfies io.ReadWriteCloser.
 type Device struct {
-	*os.File
+	*asyncio.File
 }
 
 type DeviceInfo struct {
