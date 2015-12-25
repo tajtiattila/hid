@@ -22,28 +22,38 @@ type Entry struct {
 	Battery byte
 }
 
-func (s *Entry) String() string {
+func (e *Entry) String() string {
 	var conn string
-	if s.Conn == ConnUSB {
+	if e.Conn == ConnUSB {
 		conn = "USB"
 	} else {
 		conn = "BT"
 	}
-	return s.Serial + "(" + conn + ")"
+	return e.Serial + "(" + conn + ")"
 }
 
-func (s *Entry) BatteryString() string {
-	return batteryString(s.Battery)
+func (e *Entry) ConnString() string {
+	switch e.Conn {
+	case ConnUSB:
+		return "USB"
+	case ConnBT:
+		return "BT"
+	}
+	return "?"
+}
+
+func (e *Entry) BatteryString() string {
+	return batteryString(e.Battery)
 }
 
 // Charging reports if the battery is charging.
-func (s *Entry) Charging() bool {
-	return s.Battery&0xF0 != 0
+func (e *Entry) Charging() bool {
+	return e.Battery&0xF0 != 0
 }
 
 // BatteryLevel reports the battery level percentage divided by 10.
-func (s *Entry) BatteryLevel() byte {
-	return s.Battery & 0x0F
+func (e *Entry) BatteryLevel() byte {
+	return e.Battery & 0x0F
 }
 
 // Event is sent when a new device is connected,
@@ -131,7 +141,7 @@ func (m *DeviceManager) findDevices() {
 func (m *DeviceManager) runDevice(di *hid.DeviceInfo) {
 	d, err := ds4.Open(di.Name)
 	if err != nil {
-		m.log.Println(di.Attr.SerialNo, "opening device:", err)
+		m.log.Print("opening device ", di.Attr.SerialNo, ": ", err)
 		return
 	}
 
@@ -141,7 +151,7 @@ func (m *DeviceManager) runDevice(di *hid.DeviceInfo) {
 	var s ds4.State
 	for i := 0; i < 10; i++ {
 		if err := d.ReadState(&s); err != nil {
-			m.log.Println(di.Attr.SerialNo, "initialization:", err)
+			m.log.Print("initialization", di.Attr.SerialNo, ": ", err)
 			d.Close()
 			return
 		}
@@ -164,7 +174,7 @@ func (m *DeviceManager) runDevice(di *hid.DeviceInfo) {
 
 	h, err := m.connh.Connect(d, e)
 	if err != nil {
-		m.log.Println(e, "handler init:", err)
+		m.log.Print("handler init ", e.String(), ": ", err)
 		d.Close()
 		return
 	}
@@ -181,12 +191,15 @@ func (m *DeviceManager) runDevice(di *hid.DeviceInfo) {
 
 	m.che <- Event{e, false}
 
+	m.log.Println("starting", e.String())
+
 	chq := m.chq
 
 	go func() {
 		defer func() {
 			h.Close()
 			d.Close()
+			m.log.Print("stopping ", e.String(), ": ", err)
 		}()
 		var s ds4.State
 		for {
@@ -194,13 +207,13 @@ func (m *DeviceManager) runDevice(di *hid.DeviceInfo) {
 			case <-chq:
 				d.DisconnectRadio()
 				break
+			default:
 			}
 			err := d.ReadState(&s)
 			if err == nil {
 				err = h.State(&s)
 			}
 			if err != nil {
-				m.log.Println(e, "stopping:", err)
 				break
 			}
 			if battery != s.Battery {
