@@ -19,18 +19,25 @@ func main() {
 		Fatal(err)
 	}
 	defer vjd.Relinquish()
+	vjd.Reset()
+	vjd.Update()
 
 	connh := new(connHandler)
 	connh.vjd.dev = vjd
 
+	var dm *ds4util.DeviceManager
+
 	guimain(func(w io.Writer, ch chan<- ds4util.Event) {
 		l := log.New(w, "", log.Ltime)
-		dm := ds4util.NewDeviceManager(connh, l)
+		dm = ds4util.NewDeviceManager(connh, l)
 		go func() {
-			defer close(ch)
 			for e := range dm.Event() {
 				ch <- e
 			}
 		}()
 	})
+
+	if dm != nil {
+		dm.Close()
+	}
 }
