@@ -126,6 +126,7 @@ func (m *DS4TableModel) Handle(e ds4util.Event) {
 		for i, item := range m.items {
 			if item.Serial == e.Serial && item.Conn == e.Conn {
 				copy(m.items[i:], m.items[i+1:])
+				m.items = m.items[:len(m.items)-1]
 				m.PublishRowsReset()
 				return
 			}
