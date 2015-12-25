@@ -84,23 +84,38 @@ type DeviceManager struct {
 
 	log *log.Logger
 	che chan Event
-	chq chan struct{}
+
+	chq chan chan struct{}
+
+	chqwork chan struct{}
+	grpwork sync.WaitGroup
 
 	connh ConnectHandler
 }
 
 func NewDeviceManager(h ConnectHandler, log *log.Logger) *DeviceManager {
 	m := &DeviceManager{
-		dev:   make(map[string]Entry),
-		che:   make(chan Event),
-		chq:   make(chan struct{}),
-		connh: h,
-		log:   log,
+		dev:     make(map[string]Entry),
+		che:     make(chan Event),
+		chqwork: make(chan struct{}),
+		chq:     make(chan chan struct{}),
+		connh:   h,
+		log:     log,
 	}
 	go func() {
+		t := time.NewTicker(time.Second)
+		defer t.Stop()
 		for {
-			m.findDevices()
-			time.Sleep(time.Second)
+			select {
+			case <-t.C:
+				m.findDevices()
+			case c := <-m.chq:
+				close(m.chqwork)
+				m.grpwork.Wait()
+				close(m.che)
+				close(c)
+				return
+			}
 		}
 	}()
 	return m
@@ -111,8 +126,9 @@ func (m *DeviceManager) Event() <-chan Event {
 }
 
 func (m *DeviceManager) Close() error {
-	close(m.che)
-	close(m.chq)
+	c := make(chan struct{})
+	m.chq <- c
+	<-c
 	return nil
 }
 
@@ -190,16 +206,24 @@ func (m *DeviceManager) runDevice(di *hid.DeviceInfo) {
 	m.mtx.Unlock()
 
 	m.che <- Event{e, false}
+	m.grpwork.Add(1)
 
 	m.log.Println("starting", e.String())
 
-	chq := m.chq
+	chq := m.chqwork
 
 	go func() {
 		defer func() {
 			h.Close()
 			d.Close()
 			m.log.Print("stopping ", e.String(), ": ", err)
+
+			m.mtx.Lock()
+			delete(m.dev, e.Serial)
+			m.mtx.Unlock()
+
+			m.che <- Event{e, true}
+			m.grpwork.Done()
 		}()
 		var s ds4.State
 		for {
@@ -223,12 +247,6 @@ func (m *DeviceManager) runDevice(di *hid.DeviceInfo) {
 				m.che <- Event{e, false}
 			}
 		}
-
-		m.mtx.Lock()
-		delete(m.dev, e.Serial)
-		m.mtx.Unlock()
-
-		m.che <- Event{e, true}
 	}()
 }
 
