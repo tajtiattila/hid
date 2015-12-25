@@ -54,6 +54,10 @@ func (h *vjoyHandler) State(s *ds4.State) error {
 }
 
 func (h *vjoyHandler) Close() error {
+	h.vjd.mtx.Lock()
+	defer h.vjd.mtx.Unlock()
+	h.vjd.dev.Reset()
+	h.vjd.dev.Update()
 	return nil
 }
 
