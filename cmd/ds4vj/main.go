@@ -13,6 +13,7 @@ import (
 func main() {
 	swipe := flag.Bool("swipehat", false, "use touchpad swipes as extra hat")
 	slider := flag.Bool("slider", false, "use touchpad as slider")
+	throttle := flag.Bool("throttle", false, "use touchpad as throttle")
 	bumper := flag.Bool("bumper", false, "special bumper shift logic")
 	flag.Parse()
 
@@ -36,6 +37,8 @@ func main() {
 		connh.touchlogic = TouchHat
 	case *slider:
 		connh.touchlogic = TouchSlider
+	case *throttle:
+		connh.touchlogic = TouchThrottle
 	}
 
 	if *bumper {

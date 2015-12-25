@@ -25,8 +25,9 @@ type vjoyHandler struct {
 }
 
 const (
-	TouchHat    = 1 // swipe → hat
-	TouchSlider = 2 // touch position → slider
+	TouchHat      = 1 // swipe → hat
+	TouchSlider   = 2 // touch position → slider
+	TouchThrottle = 3 // touch position → throttle slider
 
 	NormalLogic    = 0
 	BumpShiftLogic = 1
@@ -62,6 +63,9 @@ func (ch *connHandler) Connect(d *ds4.Device, e ds4util.Entry) (ds4util.StateHan
 	case TouchSlider:
 		h.tl = new(touchSlider)
 
+	case TouchThrottle:
+		h.tl = new(touchThrottle)
+
 	default:
 		h.tl = new(emptyLogic)
 	}
@@ -84,7 +88,7 @@ func (h *vjoyHandler) State(s *ds4.State) error {
 	h.vjd.mtx.Lock()
 	defer h.vjd.mtx.Unlock()
 	vj.Hat(1).SetDiscrete(h.tl.HatState())
-	vj.Axis(vjoy.Slider0).Setuf(h.tl.Slider())
+	vj.Axis(vjoy.Slider0).Setf(h.tl.Slider())
 	h.sl.SetState(vj, s)
 	vj.Update()
 
@@ -313,10 +317,43 @@ func (t *touchSlider) HandleState(s *ds4.State) {
 	)
 	x := int(s.Touch[0].X)
 	// useful range is 0..1
-	// clamping is not needed, vjoy.Axis.Setuf() will do just that
-	t.v = float32(x-border) / (right - 2*border)
+	// clamping is not needed, vjoy.Axis.Setf() will do just that
+	t.v = float32(x-border)/((right-2*border)/2) - 1
 }
 
 func (t *touchSlider) Slider() float32 { return t.v }
 
 func (*touchSlider) HatState() vjoy.HatState { return vjoy.HatOff }
+
+// touchThrottle is like touchSlider, but
+// 1/3 of the pad is used for negative values and
+// 2/3 for positive ones, with a zero gap in between.
+type touchThrottle struct {
+	v float32
+}
+
+func (t *touchThrottle) HandleState(s *ds4.State) {
+	if !s.Touch[0].Active() {
+		return
+	}
+	const (
+		right  = 1920
+		border = 200
+
+		zeroleft  = 600
+		zeroright = 800
+	)
+	x := int(s.Touch[0].X)
+	switch {
+	case x < zeroleft:
+		t.v = float32(x-zeroleft) / (zeroleft - border)
+	case zeroright < x:
+		t.v = float32(x-zeroright) / (right - zeroright - border)
+	default:
+		t.v = 0
+	}
+}
+
+func (t *touchThrottle) Slider() float32 { return t.v }
+
+func (*touchThrottle) HatState() vjoy.HatState { return vjoy.HatOff }
