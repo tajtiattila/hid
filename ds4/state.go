@@ -11,6 +11,9 @@ import (
 const (
 	Dpad = 0xf // 8: off, 0-7: clockwise from 12 o'clock
 
+	DpadOff = 1 << 3
+	DpadDir = 0x7
+
 	Square   = 1 << 4
 	Cross    = 1 << 5
 	Circle   = 1 << 6

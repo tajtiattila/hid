@@ -1,6 +1,7 @@
 package ds4util
 
 import (
+	"fmt"
 	"log"
 	"sort"
 	"sync"
@@ -251,22 +252,22 @@ func (m *DeviceManager) runDevice(di *hid.DeviceInfo) {
 }
 
 func batteryString(b byte) string {
-	var buf [16]byte
-	p := buf[:0]
-	if b&0xF0 != 0 {
-		// charging indicator
-		p = append(p, '+')
+	return batstr[int(b&0x1F)]
+}
+
+var batstr []string
+
+func init() {
+	batstr = make([]string, 32)
+	for i := 0; i < 16; i++ {
+		j := i
+		if j > 10 {
+			j = 10
+		}
+		s := fmt.Sprint(j*10, "%+")
+		batstr[i] = s[:len(s)-1]
+		batstr[i+16] = s
 	}
-	n := b & 0xF
-	switch {
-	case n >= 10:
-		p = append(p, '1', '0', '0')
-	case n == 0:
-		p = append(p, '0')
-	default:
-		p = append(p, n, '0')
-	}
-	return string(append(p, '%'))
 }
 
 type InputLenSort []*hid.DeviceInfo

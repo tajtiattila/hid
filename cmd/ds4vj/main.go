@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"flag"
 	"io"
 	"log"
 
@@ -10,6 +11,11 @@ import (
 )
 
 func main() {
+	swipe := flag.Bool("swipehat", false, "use touchpad swipes as extra hat")
+	slider := flag.Bool("slider", false, "use touchpad as slider")
+	bumper := flag.Bool("bumper", false, "special bumper shift logic")
+	flag.Parse()
+
 	if !vjoy.Available() {
 		Fatal(errors.New("vjoy.dll missing?"))
 	}
@@ -24,6 +30,17 @@ func main() {
 
 	connh := new(connHandler)
 	connh.vjd.dev = vjd
+
+	switch {
+	case *swipe:
+		connh.touchlogic = TouchHat
+	case *slider:
+		connh.touchlogic = TouchSlider
+	}
+
+	if *bumper {
+		connh.logic = BumpShiftLogic
+	}
 
 	var dm *ds4util.DeviceManager
 

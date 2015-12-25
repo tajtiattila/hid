@@ -18,13 +18,25 @@ type VJD struct {
 type vjoyHandler struct {
 	vjd *VJD
 	d   *ds4.Device
-	sh  swipeHat
+	tl  TouchLogic
+	sl  SetStater
 
 	bw bool
 }
 
+const (
+	TouchHat    = 1 // swipe → hat
+	TouchSlider = 2 // touch position → slider
+
+	NormalLogic    = 0
+	BumpShiftLogic = 1
+)
+
 type connHandler struct {
 	vjd VJD
+
+	logic      int
+	touchlogic int
 }
 
 func (ch *connHandler) Connect(d *ds4.Device, e ds4util.Entry) (ds4util.StateHandler, error) {
@@ -33,7 +45,27 @@ func (ch *connHandler) Connect(d *ds4.Device, e ds4util.Entry) (ds4util.StateHan
 		d:   d,
 		bw:  batteryWarn(e.Battery),
 	}
-	h.sh.logic = ds4util.NewSwipeLogic(&h.sh)
+
+	switch ch.logic {
+	case NormalLogic:
+		h.sl = SetStaterFunc(setState)
+	case BumpShiftLogic:
+		h.sl = new(bumperLogic)
+	}
+
+	switch ch.touchlogic {
+	case TouchHat:
+		sh := new(swipeHat)
+		sh.logic = ds4util.NewSwipeLogic(sh)
+		h.tl = sh
+
+	case TouchSlider:
+		h.tl = new(touchSlider)
+
+	default:
+		h.tl = new(emptyLogic)
+	}
+
 	h.setColor()
 	return h, nil
 }
@@ -45,11 +77,17 @@ func (h *vjoyHandler) State(s *ds4.State) error {
 		h.setColor()
 	}
 
-	h.sh.logic.HandleState(s)
+	h.tl.HandleState(s)
+
+	vj := h.vjd.dev
 
 	h.vjd.mtx.Lock()
 	defer h.vjd.mtx.Unlock()
-	setState(h.vjd.dev, s, h.sh.HatState())
+	vj.Hat(1).SetDiscrete(h.tl.HatState())
+	vj.Axis(vjoy.Slider0).Setuf(h.tl.Slider())
+	h.sl.SetState(vj, s)
+	vj.Update()
+
 	return nil
 }
 
@@ -70,31 +108,50 @@ func (h *vjoyHandler) setColor() {
 	}
 }
 
-func setState(vj *vjoy.Device, s *ds4.State, swipeHat vjoy.HatState) {
-	const triggerMinPull = 20
-	vj.Button(0).Set(s.L2 >= triggerMinPull)
-	vj.Button(1).Set(s.R2 >= triggerMinPull)
-	for i, m := range []uint32{
-		ds4.L1,
-		ds4.R1,
-		ds4.L3,
-		ds4.R3,
+type SetStater interface {
+	SetState(vj *vjoy.Device, s *ds4.State)
+}
 
+type SetStaterFunc func(vj *vjoy.Device, s *ds4.State)
+
+func (f SetStaterFunc) SetState(vj *vjoy.Device, s *ds4.State) {
+	f(vj, s)
+}
+
+func setState(vj *vjoy.Device, s *ds4.State) {
+	button := s.Button & ^uint32(ds4.L2|ds4.R2)
+
+	// reduce trigger sensitivity
+	const triggerMinPull = 20
+	if s.L2 >= triggerMinPull {
+		button |= ds4.L2
+	}
+	if s.R2 >= triggerMinPull {
+		button |= ds4.R2
+	}
+
+	for i, m := range []uint32{
 		ds4.Cross,
 		ds4.Circle,
 		ds4.Square,
 		ds4.Triangle,
+
+		ds4.L1,
+		ds4.R1,
+		ds4.L2,
+		ds4.R2,
+		ds4.L3,
+		ds4.R3,
 
 		ds4.Options,
 		ds4.Share,
 		ds4.PS,
 		ds4.Click,
 	} {
-		vj.Button(uint(i + 2)).Set(s.Button&m != 0)
+		vj.Button(uint(i)).Set(button&m != 0)
 	}
 
-	vj.Hat(0).SetDiscrete(hat(s.Button))
-	vj.Hat(1).SetDiscrete(swipeHat)
+	vj.Hat(0).SetDiscrete(hat(button))
 
 	vj.Axis(vjoy.AxisX).Setf(axis(s.LX))
 	vj.Axis(vjoy.AxisY).Setf(axis(s.LY))
@@ -102,8 +159,6 @@ func setState(vj *vjoy.Device, s *ds4.State, swipeHat vjoy.HatState) {
 	vj.Axis(vjoy.AxisRY).Setf(axis(s.RY))
 
 	vj.Axis(vjoy.AxisZ).Setf(gyroAxis(s.GyroRoll()))
-
-	vj.Update()
 }
 
 func batteryWarn(b byte) bool {
@@ -166,11 +221,32 @@ func hat(button uint32) vjoy.HatState {
 	return vjoy.HatOff
 }
 
+type TouchLogic interface {
+	HandleState(s *ds4.State)
+
+	Slider() float32
+	HatState() vjoy.HatState
+}
+
+type emptyLogic struct{}
+
+func (*emptyLogic) HandleState(s *ds4.State) {}
+func (*emptyLogic) Slider() float32          { return 0 }
+func (*emptyLogic) HatState() vjoy.HatState  { return vjoy.HatOff }
+
 type swipeHat struct {
 	logic *ds4util.SwipeLogic
 
 	mtx   sync.Mutex
 	swipe [4]int
+}
+
+func (h *swipeHat) HandleState(s *ds4.State) {
+	h.logic.HandleState(s)
+}
+
+func (h *swipeHat) Slider() float32 {
+	return 0
 }
 
 func (h *swipeHat) HatState() vjoy.HatState {
@@ -222,3 +298,25 @@ func (h *swipeHat) Swipe(dir int, ntouch int) {
 		h.swipe[n]++
 	}
 }
+
+type touchSlider struct {
+	v float32
+}
+
+func (t *touchSlider) HandleState(s *ds4.State) {
+	if !s.Touch[0].Active() {
+		return
+	}
+	const (
+		right  = 1920
+		border = 200
+	)
+	x := int(s.Touch[0].X)
+	// useful range is 0..1
+	// clamping is not needed, vjoy.Axis.Setuf() will do just that
+	t.v = float32(x-border) / (right - 2*border)
+}
+
+func (t *touchSlider) Slider() float32 { return t.v }
+
+func (*touchSlider) HatState() vjoy.HatState { return vjoy.HatOff }

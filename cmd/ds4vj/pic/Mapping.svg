@@ -15,7 +15,7 @@
    id="svg6306"
    inkscape:version="0.91 r13725"
    sodipodi:docname="Mapping.svg"
-   inkscape:export-filename="C:\gocode\src\github.com\tajtiattila\ds4-vjoy\pic\Mapping.png"
+   inkscape:export-filename="C:\gocode\src\github.com\tajtiattila\hid\cmd\ds4vj\pic\Mapping.png"
    inkscape:export-xdpi="90"
    inkscape:export-ydpi="90">
   <sodipodi:namedview
@@ -25,12 +25,12 @@
      objecttolerance="10"
      gridtolerance="10"
      guidetolerance="10"
-     inkscape:pageopacity="0"
+     inkscape:pageopacity="1"
      inkscape:pageshadow="2"
      inkscape:window-width="1920"
      inkscape:window-height="1018"
      id="namedview80"
-     showgrid="true"
+     showgrid="false"
      inkscape:zoom="1.4183333"
      inkscape:cx="500"
      inkscape:cy="300"
@@ -44,7 +44,7 @@
      inkscape:snap-bbox-midpoints="false"
      showguides="true"
      inkscape:guide-bbox="true"
-     inkscape:object-nodes="false"
+     inkscape:object-nodes="true"
      inkscape:snap-smooth-nodes="false"
      inkscape:snap-text-baseline="true"
      inkscape:snap-grids="true">
@@ -53,7 +53,9 @@
        id="grid4224"
        spacingx="8"
        spacingy="8"
-       empspacing="4" />
+       empspacing="4"
+       visible="true"
+       snapvisiblegridlinesonly="false" />
   </sodipodi:namedview>
   <defs
      id="defs6308">
@@ -231,14 +233,14 @@
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:15px;line-height:125%;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans';text-align:center;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       x="423.90842"
-       y="181.59204"
+       x="424"
+       y="184"
        id="text4250"
        sodipodi:linespacing="125%"><tspan
          sodipodi:role="line"
          id="tspan4252"
-         x="423.90842"
-         y="181.59204">Roll &amp; Pitch</tspan></text>
+         x="424"
+         y="184">Roll &amp; Pitch</tspan></text>
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:15px;line-height:125%;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans';text-align:center;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
@@ -448,14 +450,14 @@
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:15px;line-height:125%;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans';text-align:center;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       x="135.99998"
-       y="-56.000008"
+       x="136"
+       y="-48"
        id="text4334"
        sodipodi:linespacing="125%"><tspan
          sodipodi:role="line"
          id="tspan4336"
-         x="135.99998"
-         y="-56.000008">Target ahead</tspan></text>
+         x="136"
+         y="-48">Target ahead</tspan></text>
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:15px;line-height:125%;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans';letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
@@ -466,7 +468,7 @@
          sodipodi:role="line"
          id="tspan4340"
          x="151.99998"
-         y="-32.000008">Next enemy</tspan></text>
+         y="-32.000008">Next ship</tspan></text>
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:15px;line-height:125%;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans';text-align:end;letter-spacing:0px;word-spacing:0px;text-anchor:end;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
@@ -477,29 +479,29 @@
          sodipodi:role="line"
          id="tspan4344"
          x="119.99998"
-         y="-32.000008">Prev. enemy</tspan></text>
+         y="-32.000008">Prev. ship</tspan></text>
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:15px;line-height:125%;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans';text-align:center;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       x="135.99998"
-       y="-8.0000057"
+       x="136"
+       y="-16"
        id="text4346"
        sodipodi:linespacing="125%"><tspan
          sodipodi:role="line"
          id="tspan4348"
-         x="135.99998"
-         y="-8.0000057">Highest threat</tspan></text>
+         x="136"
+         y="-16">Highest threat</tspan></text>
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:15px;line-height:125%;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans';text-align:center;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#0000ff;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       x="135.99998"
-       y="39.999992"
+       x="136"
+       y="48"
        id="text4334-4"
        sodipodi:linespacing="125%"><tspan
          sodipodi:role="line"
          id="tspan4336-7"
-         x="135.99998"
-         y="39.999992">Prev. subsys</tspan></text>
+         x="136"
+         y="48">Prev. subsys</tspan></text>
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:15px;line-height:125%;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans';letter-spacing:0px;word-spacing:0px;fill:#0000ff;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
@@ -510,7 +512,7 @@
          sodipodi:role="line"
          id="tspan4340-0"
          x="151.99998"
-         y="63.999992">Next ship</tspan></text>
+         y="63.999992">Next enemy</tspan></text>
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:15px;line-height:125%;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans';text-align:end;letter-spacing:0px;word-spacing:0px;text-anchor:end;fill:#0000ff;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
@@ -521,29 +523,29 @@
          sodipodi:role="line"
          id="tspan4344-0"
          x="120.00001"
-         y="63.999992">Prev. ship</tspan></text>
+         y="63.999992">Prev. enemy</tspan></text>
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:15px;line-height:125%;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans';text-align:center;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#0000ff;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       x="135.99998"
-       y="87.999992"
+       x="136"
+       y="80"
        id="text4346-6"
        sodipodi:linespacing="125%"><tspan
          sodipodi:role="line"
          id="tspan4348-5"
-         x="135.99998"
-         y="87.999992">Next subsys.</tspan></text>
+         x="136"
+         y="80">Next subsys.</tspan></text>
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:15px;line-height:125%;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans';text-align:center;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#ff00ff;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       x="135.99998"
-       y="136"
+       x="136"
+       y="144"
        id="text4334-4-7"
        sodipodi:linespacing="125%"><tspan
          sodipodi:role="line"
          id="tspan4336-7-2"
-         x="135.99998"
-         y="136">Warp</tspan></text>
+         x="136"
+         y="144">Warp</tspan></text>
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:15px;line-height:125%;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans';letter-spacing:0px;word-spacing:0px;fill:#ff00ff;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
@@ -569,25 +571,25 @@
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:15px;line-height:125%;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans';text-align:center;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#ff00ff;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       x="135.99998"
-       y="184"
+       x="136"
+       y="176"
        id="text4346-6-9"
        sodipodi:linespacing="125%"><tspan
          sodipodi:role="line"
          id="tspan4348-5-7"
-         x="135.99998"
-         y="184">Supercruise</tspan></text>
+         x="136"
+         y="176">Supercruise</tspan></text>
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:15px;line-height:125%;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans';text-align:center;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#ff0000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       x="135.99998"
-       y="232"
+       x="136"
+       y="240"
        id="text4334-4-7-5"
        sodipodi:linespacing="125%"><tspan
          sodipodi:role="line"
          id="tspan4336-7-2-3"
-         x="135.99998"
-         y="232">-</tspan></text>
+         x="136"
+         y="240">Ship lights</tspan></text>
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:15px;line-height:125%;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans';letter-spacing:0px;word-spacing:0px;fill:#ff0000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
@@ -613,25 +615,25 @@
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:15px;line-height:125%;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans';text-align:center;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#ff0000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       x="135.99998"
-       y="280"
+       x="136"
+       y="272"
        id="text4346-6-9-5"
        sodipodi:linespacing="125%"><tspan
          sodipodi:role="line"
          id="tspan4348-5-7-9"
-         x="135.99998"
-         y="280">Jettison cargo</tspan></text>
+         x="136"
+         y="272">Jettison cargo</tspan></text>
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:15px;line-height:125%;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans';text-align:center;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#ff6600;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       x="135.99998"
-       y="328"
+       x="136"
+       y="336"
        id="text4334-4-7-5-6"
        sodipodi:linespacing="125%"><tspan
          sodipodi:role="line"
          id="tspan4336-7-2-3-2"
-         x="135.99998"
-         y="328">ENG</tspan></text>
+         x="136"
+         y="336">ENG</tspan></text>
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:15px;line-height:125%;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans';letter-spacing:0px;word-spacing:0px;fill:#ff6600;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
@@ -657,24 +659,24 @@
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:15px;line-height:125%;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans';text-align:center;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#ff6600;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       x="135.99998"
-       y="376"
+       x="136"
+       y="368"
        id="text4346-6-9-5-9"
        sodipodi:linespacing="125%"><tspan
          sodipodi:role="line"
          id="tspan4348-5-7-9-9"
-         x="135.99998"
-         y="376">RST</tspan></text>
+         x="136"
+         y="368">RST</tspan></text>
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:15px;line-height:125%;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans';text-align:center;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       x="415.99997"
+       x="424"
        y="232"
        id="text4502"
        sodipodi:linespacing="125%"><tspan
          sodipodi:role="line"
          id="tspan4504"
-         x="415.99997"
+         x="424"
          y="232">(Boost)</tspan></text>
     <text
        xml:space="preserve"
@@ -687,6 +689,56 @@
          id="tspan4508"
          x="592"
          y="232">(Headlook)</tspan></text>
+    <path
+       style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="m 224,224 -136,0 0,-16 -48,0 0,16 -24,0"
+       id="path4398"
+       inkscape:connector-curvature="0"
+       sodipodi:nodetypes="cccccc" />
+    <path
+       style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="m 224,128 -136,0 0,-16 -48,0 0,16 -24,0"
+       id="path4398-9"
+       inkscape:connector-curvature="0"
+       sodipodi:nodetypes="cccccc" />
+    <path
+       style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="M 224,32 88,32 88,16 40,16 40,32 16,32"
+       id="path4398-5"
+       inkscape:connector-curvature="0"
+       sodipodi:nodetypes="cccccc" />
+    <path
+       style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="m 224,320 -136,0 0,-16 -48,0 0,16 -24,0"
+       id="path4398-4"
+       inkscape:connector-curvature="0"
+       sodipodi:nodetypes="cccccc" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:15px;line-height:125%;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans';text-align:center;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#ff00ff;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       x="424"
+       y="256"
+       id="text4427"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan4429"
+         x="424"
+         y="256">Yaw &amp; Pitch</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:15px;line-height:125%;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans';text-align:center;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#ff00ff;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;"
+       x="592"
+       y="256"
+       id="text4431"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan4433"
+         x="592"
+         y="256">Lateral &amp;</tspan><tspan
+         sodipodi:role="line"
+         x="592"
+         y="274.75"
+         id="tspan4435">Longitudinal thrust</tspan></text>
   </g>
   <g
      id="g3242"
@@ -808,6 +860,55 @@
          id="tspan4500"
          x="616.86194"
          y="207.73679">Spec. combat</tspan></text>
+    <g
+       style="fill:#e6e6e6"
+       id="g4471-5"
+       transform="translate(-728,-31.567571)">
+      <path
+         inkscape:connector-curvature="0"
+         style="display:inline;fill:#e6e6e6;stroke:#0000ff;stroke-width:2;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+         id="path4532-04-8"
+         d="m 578.59169,161.21529 12.54045,13.04299" />
+      <path
+         inkscape:connector-curvature="0"
+         style="display:inline;fill:#e6e6e6;stroke:#0000ff;stroke-width:2;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+         id="path4532-0-6-4"
+         d="m 591.08942,161.12944 -12.455,13.21469" />
+    </g>
+    <rect
+       width="11.932199"
+       height="12.551531"
+       x="-156.85977"
+       y="321.461"
+       id="rect4554-0-3-9"
+       style="color:#000000;display:inline;overflow:visible;visibility:visible;fill:none;stroke:#ff00ff;stroke-width:2;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;marker:none;enable-background:accumulate" />
+    <g
+       transform="translate(-719.75558,160)"
+       style="fill:#e6e6e6"
+       id="g4471-0-3">
+      <path
+         inkscape:connector-curvature="0"
+         style="display:inline;fill:#e6e6e6;stroke:#0000ff;stroke-width:2;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+         id="path4532-04-4-6"
+         d="m 578.59169,161.21529 12.54045,13.04299" />
+      <path
+         inkscape:connector-curvature="0"
+         style="display:inline;fill:#e6e6e6;stroke:#0000ff;stroke-width:2;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+         id="path4532-0-6-7-9"
+         d="m 591.08942,161.12944 -12.455,13.21469" />
+    </g>
+    <path
+       d="m -135.8496,423.73678 a 7.2884822,7.6667857 0 1 1 -14.57696,0 7.2884822,7.6667857 0 1 1 14.57696,0 z"
+       id="path4552-5-4"
+       style="color:#000000;display:inline;overflow:visible;visibility:visible;fill:none;stroke:#ff6600;stroke-width:2;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;marker:none;enable-background:accumulate"
+       inkscape:connector-curvature="0" />
+    <rect
+       width="11.932199"
+       height="12.551531"
+       x="-149.10419"
+       y="225.46101"
+       id="rect4554-0-9"
+       style="color:#000000;display:inline;overflow:visible;visibility:visible;fill:none;stroke:#ff00ff;stroke-width:2;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;marker:none;enable-background:accumulate" />
   </g>
   <g
      id="g3262"
