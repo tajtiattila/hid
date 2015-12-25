@@ -54,6 +54,9 @@ func Open(name string) (*Device, error) {
 	return x, nil
 }
 
+// Bluetooth reports whether d uses bluetooth.
+func (d *Device) Bluetooth() bool { return d.bt }
+
 func (d *Device) ReadState(s *State) error {
 	_, err := d.Device.Read(d.ibuf)
 	if err != nil {
