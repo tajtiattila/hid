@@ -2,56 +2,61 @@ package ds4
 
 import "math"
 
-// GyroRoll returns the gyroscope roll value in degrees.
-//
-// -90: max left roll
-// 0: neutral
-// 90: max right roll
-//
-// Note that when rolling more than 90° the absolute value decreases.
+// GyroRoll returns the gyroscope roll value in degrees between -180 and 180.
+// Left roll is negative, right is positive.
 func GyroRoll(xi, yi, zi int16) float64 {
 	x, y, z := gyroVec(xi, yi, zi)
-	wr := math.Sqrt(y*y + z*z)
-	return -math.Atan2(x, wr) * 180 / math.Pi
+	wr := sgn(y) * math.Sqrt(y*y+z*z)
+	return math.Atan2(-x, wr) * 180 / math.Pi
 }
 
-// GyroPitch returns the gyroscope pitch value in degrees.
-//
-// -90: max forward pitch
-// 0: neutral
-// 90: max backward pitch
-//
-// Note that when pitching more than 90° the absolute value decreases.
+// GyroPitch returns the gyroscope roll value in degrees between -180 and 180.
+// Pitch down is positive, up is negative.
 func GyroPitch(xi, yi, zi int16) float64 {
 	x, y, z := gyroVec(xi, yi, zi)
-	wp := math.Sqrt(x*x + y*y)
-	return -math.Atan2(z, wp) * 180 / math.Pi
+	wp := sgn(y) * math.Sqrt(x*x+y*y)
+	return math.Atan2(z, wp) * 180 / math.Pi
 }
 
-const sqrt3 = 1.73205080756887729352744634150587236694280525381038062805580697 // http://oeis.org/A002194
-
 // GyroRollPitch returns the gyroscope pitch and roll values in degrees.
-// Using this function should be preferred over calling GyroRoll and GyroPitch
-// separately.
+// Roll is between -180..180 and pitch is between -90..90 degrees.
 //
-// With large roll and pitch input a gimbal lock occurs,
-// when it is impossible to calculate accurate roll and pitch values.
-// The ok flag is set to false in this case.
-// Roll and pitch can be controlled reliably and independently
-// only if the absolute value of both are under 45°,
-// but in practice an even smaller limit should be used.
-func GyroRollPitch(xi, yi, zi int16) (r, p float64, ok bool) {
-	x, y, z := gyroVec(xi, yi, zi)
-	wr := math.Sqrt(y*y + z*z)
-	wp := math.Sqrt(x*x + y*y)
-	r = -math.Atan2(x, wr) * 180 / math.Pi
-	p = -math.Atan2(z, wp) * 180 / math.Pi
+// The roll angle becomes unstable when pitch is near ±90° degrees.
+func GyroRollPitch(xi, yi, zi int16) (r, p float64) {
 
-	// TODO(tajti): ask mathematician about limit check
-	return r, p, math.Abs(y) > (1 - sqrt3/2)
+	// http://www.nxp.com/files/sensors/doc/app_note/AN3461.pdf
+	//
+	// In paper:
+	//   x: up, y: right, z: back
+	//   roll:  φ
+	//   pitch: θ
+	//
+	//   25. tan φ_xyz = y/z
+	//   26. tan θ_xyz = -x/√(y²+z²)
+	//   28. tan φ_yxz = y/√(x²+z²)
+	//   29. tan θ_yxz = -x/z
+	//   37. tan θ_xyz = -x/√(y²+z²)  (same as 26.)
+	//   38. tan φ_xyz = y/(sign(z)√(z²+μx²)
+
+	// mu is a constant to stabilise the roll value when both x and y
+	// is near, that is when pitch approaches ±90°.
+	const mu = 0.01
+
+	x, y, z := gyroVec(xi, yi, zi)
+	wr := sgn(y) * math.Sqrt(y*y+mu*z*z)
+	wp := math.Sqrt(x*x + y*y)
+	r = math.Atan2(x, wr) * 180 / math.Pi
+	p = math.Atan2(z, wp) * 180 / math.Pi
+	return r, p
 }
 
 // gyroVec returns a normalized based on the gyroscope sensor input
+//
+// x axis points left
+// y axis points down
+// z axis points forward
+//
+// The neutral position is (0 1 0).
 func gyroVec(xi, yi, zi int16) (x, y, z float64) {
 	x, y, z = float64(xi), float64(yi), float64(zi)
 	mag := math.Sqrt(x*x + y*y + z*z)
@@ -59,4 +64,11 @@ func gyroVec(xi, yi, zi int16) (x, y, z float64) {
 	y /= mag
 	z /= mag
 	return
+}
+
+func sgn(v float64) float64 {
+	if v < 0 {
+		return -1
+	}
+	return 1
 }

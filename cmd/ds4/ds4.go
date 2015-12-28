@@ -130,7 +130,9 @@ func main() {
 
 func InputTest(ibuf []byte, s *ds4.State) {
 	fmt.Print("\r")
-	fmt.Print(s.String())
+	x, y, z := s.GyroVec()
+	r, p := s.GyroRollPitch()
+	fmt.Printf("%5.2f %5.2f %5.2f %4.0f %4.0f", x, y, z, r, p)
 	/*
 
 		gr, gp, ok := s.GyroRollPitch()

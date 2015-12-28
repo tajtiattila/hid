@@ -153,8 +153,12 @@ func (s *State) GyroPitch() float64 {
 	return GyroPitch(s.XGyro, s.YGyro, s.ZGyro)
 }
 
-func (s *State) GyroRollPitch() (roll, pitch float64, ok bool) {
+func (s *State) GyroRollPitch() (roll, pitch float64) {
 	return GyroRollPitch(s.XGyro, s.YGyro, s.ZGyro)
+}
+
+func (s *State) GyroVec() (x, y, z float64) {
+	return gyroVec(s.XGyro, s.YGyro, s.ZGyro)
 }
 
 func (s *State) Finger(fid byte) *Touch {
