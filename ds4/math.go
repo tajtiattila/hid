@@ -6,7 +6,7 @@ import "math"
 // Left roll is negative, right is positive.
 func GyroRoll(xi, yi, zi int16) float64 {
 	x, y, z := gyroVec(xi, yi, zi)
-	wr := sgn(y) * math.Sqrt(y*y+z*z)
+	wr := math.Copysign(math.Sqrt(y*y+z*z), y)
 	return math.Atan2(-x, wr) * 180 / math.Pi
 }
 
@@ -14,7 +14,7 @@ func GyroRoll(xi, yi, zi int16) float64 {
 // Pitch down is positive, up is negative.
 func GyroPitch(xi, yi, zi int16) float64 {
 	x, y, z := gyroVec(xi, yi, zi)
-	wp := sgn(y) * math.Sqrt(x*x+y*y)
+	wp := math.Copysign(math.Sqrt(x*x+y*y), y)
 	return math.Atan2(z, wp) * 180 / math.Pi
 }
 
@@ -43,7 +43,7 @@ func GyroRollPitch(xi, yi, zi int16) (r, p float64) {
 	const mu = 0.01
 
 	x, y, z := gyroVec(xi, yi, zi)
-	wr := sgn(y) * math.Sqrt(y*y+mu*z*z)
+	wr := math.Copysign(math.Sqrt(y*y+mu*z*z), y)
 	wp := math.Sqrt(x*x + y*y)
 	r = math.Atan2(x, wr) * 180 / math.Pi
 	p = math.Atan2(z, wp) * 180 / math.Pi
@@ -64,11 +64,4 @@ func gyroVec(xi, yi, zi int16) (x, y, z float64) {
 	y /= mag
 	z /= mag
 	return
-}
-
-func sgn(v float64) float64 {
-	if v < 0 {
-		return -1
-	}
-	return 1
 }

@@ -15,6 +15,7 @@ func main() {
 	slider := flag.Bool("slider", false, "use touchpad as slider")
 	throttle := flag.Bool("throttle", false, "use touchpad as throttle")
 	bumper := flag.Bool("bumper", false, "special bumper shift logic")
+	gyro := flag.Bool("gyro", false, "feed gyro roll/pitch to second device")
 	flag.Parse()
 
 	if !vjoy.Available() {
@@ -29,8 +30,19 @@ func main() {
 	vjd.Reset()
 	vjd.Update()
 
+	var vjd2 *vjoy.Device
+	if *gyro {
+		vjd2, err = vjoy.Acquire(2)
+		if err != nil {
+			Fatal(err)
+		}
+		defer vjd2.Relinquish()
+		vjd2.Reset()
+		vjd2.Update()
+	}
+
 	connh := new(connHandler)
-	connh.vjd.dev = vjd
+	connh.vjd = VJD{dev: vjd, dev2: vjd2}
 
 	switch {
 	case *swipe:

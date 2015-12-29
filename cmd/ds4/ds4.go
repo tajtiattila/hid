@@ -128,11 +128,45 @@ func main() {
 	}
 }
 
+var gavg = ds4util.NewPosAvg(500, 200*time.Millisecond)
+
+type filter struct {
+	xv [5]float64
+	yv [5]float64
+}
+
+var fr, fp filter
+
+func (f *filter) value(v float64) float64 {
+	const gain = 2.674241096e+06
+
+	f.xv[0] = f.xv[1]
+	f.xv[1] = f.xv[2]
+	f.xv[2] = f.xv[3]
+	f.xv[3] = f.xv[4]
+	f.xv[4] = v / gain
+	f.yv[0] = f.yv[1]
+	f.yv[1] = f.yv[2]
+	f.yv[2] = f.yv[3]
+	f.yv[3] = f.yv[4]
+	f.yv[4] = (f.xv[0] + f.xv[4]) + 4*(f.xv[1]+f.xv[3]) + 6*f.xv[2] +
+		(-0.8768965608 * f.yv[0]) + (3.6227607596 * f.yv[1]) +
+		(-5.6145268496 * f.yv[2]) + (3.8686566679 * f.yv[3])
+	return f.yv[4]
+}
+
 func InputTest(ibuf []byte, s *ds4.State) {
 	fmt.Print("\r")
 	x, y, z := s.GyroVec()
 	r, p := s.GyroRollPitch()
-	fmt.Printf("%5.2f %5.2f %5.2f %4.0f %4.0f", x, y, z, r, p)
+	//rf, pf := fr.value(r), fp.value(p)
+	const m = 100
+	ri := int32(r * m)
+	pi := int32(p * m)
+	gavg.Push(ri, pi)
+	ri, pi = gavg.Value()
+	r, p = float64(ri)/m, float64(pi)/m
+	fmt.Printf("%5.2f %5.2f %5.2f %4.0f %4.0f %4d", x, y, z, r, p, gavg.N())
 	/*
 
 		gr, gp, ok := s.GyroRollPitch()

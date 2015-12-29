@@ -11,8 +11,9 @@ import (
 )
 
 type VJD struct {
-	mtx sync.Mutex
-	dev *vjoy.Device
+	mtx  sync.Mutex
+	dev  *vjoy.Device
+	dev2 *vjoy.Device
 }
 
 type vjoyHandler struct {
@@ -20,6 +21,8 @@ type vjoyHandler struct {
 	d   *ds4.Device
 	tl  TouchLogic
 	sl  SetStater
+
+	gavg *ds4util.PosAvg
 
 	bw bool
 }
@@ -70,6 +73,10 @@ func (ch *connHandler) Connect(d *ds4.Device, e ds4util.Entry) (ds4util.StateHan
 		h.tl = new(emptyLogic)
 	}
 
+	if ch.vjd.dev2 != nil {
+		h.gavg = ds4util.NewPosAvg(100, 200*time.Millisecond)
+	}
+
 	h.setColor()
 	return h, nil
 }
@@ -83,14 +90,25 @@ func (h *vjoyHandler) State(s *ds4.State) error {
 
 	h.tl.HandleState(s)
 
-	vj := h.vjd.dev
-
 	h.vjd.mtx.Lock()
 	defer h.vjd.mtx.Unlock()
+
+	vj := h.vjd.dev
 	vj.Hat(1).SetDiscrete(h.tl.HatState())
 	vj.Axis(vjoy.Slider0).Setf(h.tl.Slider())
 	h.sl.SetState(vj, s)
 	vj.Update()
+
+	if vj2 := h.vjd.dev2; vj2 != nil {
+		r, p := s.GyroRollPitch()
+		ri := dzscale(10, 50, r)
+		pi := dzscale(10, 50, p)
+		h.gavg.Push(ri, pi)
+		ri, pi = h.gavg.Value()
+		vj2.Axis(vjoy.AxisX).Seti(int(ri))
+		vj2.Axis(vjoy.AxisY).Seti(int(pi))
+		vj2.Update()
+	}
 
 	return nil
 }
@@ -161,8 +179,6 @@ func setState(vj *vjoy.Device, s *ds4.State) {
 	vj.Axis(vjoy.AxisY).Setf(axis(s.LY))
 	vj.Axis(vjoy.AxisRX).Setf(axis(s.RX))
 	vj.Axis(vjoy.AxisRY).Setf(axis(s.RY))
-
-	vj.Axis(vjoy.AxisZ).Setf(gyroAxis(s.GyroRoll()))
 }
 
 func batteryWarn(b byte) bool {
@@ -188,27 +204,6 @@ func axis(v byte) float32 {
 		return 1
 	}
 	return r
-}
-
-// 10°...45° -> 0..1
-func gyroAxis(v float64) float32 {
-	r := v
-	if r < 0 {
-		r += 10
-	} else {
-		r -= 10
-	}
-	if r*v < 0 {
-		return 0
-	}
-	r /= 35
-	if r < -1 {
-		return -1
-	}
-	if 1 < r {
-		return 1
-	}
-	return float32(r)
 }
 
 func hat(button uint32) vjoy.HatState {
@@ -357,3 +352,26 @@ func (t *touchThrottle) HandleState(s *ds4.State) {
 func (t *touchThrottle) Slider() float32 { return t.v }
 
 func (*touchThrottle) HatState() vjoy.HatState { return vjoy.HatOff }
+
+const (
+	axisunit = 0x3fff
+)
+
+func dzscale(dz, max, v float64) int32 {
+	switch {
+	case v < -dz:
+		v += dz
+		if v < -max {
+			return -1
+		}
+	case dz < v:
+		v -= dz
+		if max < v {
+			return 1
+		}
+	default:
+		return 0
+	}
+	w := v * axisunit / max
+	return int32(w + math.Copysign(0.5, w))
+}

@@ -4,58 +4,48 @@ import "time"
 
 type tpos struct {
 	t    time.Time
-	x, y int
+	x, y int32
 }
 
-type posavg struct {
+type PosAvg struct {
 	d       time.Duration
 	v       []tpos
 	r, w, n int
 	sx, sy  int64
 }
 
-func newPosAvg(n int, d time.Duration) *posavg {
-	return &posavg{
+func NewPosAvg(n int, d time.Duration) *PosAvg {
+	return &PosAvg{
 		d: d,
 		v: make([]tpos, n),
 	}
 }
 
-func (a *posavg) Len() int {
-	return a.n
+func (a *PosAvg) N() int { return a.n }
+
+func (a *PosAvg) Value() (x, y int32) {
+	nf := int64(a.n)
+	return int32(a.sx / nf), int32(a.sy / nf)
 }
 
-func (a *posavg) Dist2(x, y int) int64 {
-	if a.n == 0 {
-		return 0
-	}
-	ax, ay := a.Avg()
-	dx, dy := int64(x-ax), int64(y-ay)
-	return dx*dx + dy*dy
-}
-
-func (a *posavg) Avg() (x, y int) {
-	n64 := int64(a.n)
-	return int(a.sx / n64), int(a.sy / n64)
-}
-
-func (a *posavg) Reset() {
+func (a *PosAvg) Reset() {
 	a.n, a.r, a.w = 0, 0, 0
 	a.sx, a.sy = 0, 0
 }
 
-func (a *posavg) Push(p tpos) {
-	a.push(p)
+func (a *PosAvg) Push(x, y int32) {
+	t := time.Now()
+	a.push(tpos{t, x, y})
 	if a.w == a.r {
 		a.pop()
 	}
-	t := p.t.Add(-a.d)
-	for a.r != a.w && a.v[a.r].t.Before(t) {
+	t0 := t.Add(-a.d)
+	for a.r != a.w && a.v[a.r].t.Before(t0) {
 		a.pop()
 	}
 }
 
-func (a *posavg) push(p tpos) {
+func (a *PosAvg) push(p tpos) {
 	a.v[a.w] = p
 	a.sx += int64(p.x)
 	a.sy += int64(p.y)
@@ -65,7 +55,7 @@ func (a *posavg) push(p tpos) {
 	}
 }
 
-func (a *posavg) pop() {
+func (a *PosAvg) pop() {
 	q := a.v[a.r]
 	a.sx -= int64(q.x)
 	a.sy -= int64(q.y)
