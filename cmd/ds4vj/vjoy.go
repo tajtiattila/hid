@@ -21,8 +21,7 @@ type vjoyHandler struct {
 	d   *ds4.Device
 	tl  TouchLogic
 	sl  SetStater
-
-	gavg *ds4util.PosAvg
+	gf  ds4util.Filter
 
 	bw bool
 }
@@ -41,6 +40,9 @@ type connHandler struct {
 
 	logic      int
 	touchlogic int
+
+	// ngf creates a new gyro filter
+	ngf func() ds4util.Filter
 }
 
 func (ch *connHandler) Connect(d *ds4.Device, e ds4util.Entry) (ds4util.StateHandler, error) {
@@ -48,6 +50,7 @@ func (ch *connHandler) Connect(d *ds4.Device, e ds4util.Entry) (ds4util.StateHan
 		vjd: &ch.vjd,
 		d:   d,
 		bw:  batteryWarn(e.Battery),
+		gf:  ch.ngf(),
 	}
 
 	switch ch.logic {
@@ -73,10 +76,6 @@ func (ch *connHandler) Connect(d *ds4.Device, e ds4util.Entry) (ds4util.StateHan
 		h.tl = new(emptyLogic)
 	}
 
-	if ch.vjd.dev2 != nil {
-		h.gavg = ds4util.NewPosAvg(100, 200*time.Millisecond)
-	}
-
 	h.setColor()
 	return h, nil
 }
@@ -100,11 +99,16 @@ func (h *vjoyHandler) State(s *ds4.State) error {
 	vj.Update()
 
 	if vj2 := h.vjd.dev2; vj2 != nil {
-		r, p := s.GyroRollPitch()
+		const m = 10000
+		v := h.gf.Filter([]int{
+			int(s.XGyro) * m,
+			int(s.YGyro) * m,
+			int(s.ZGyro) * m,
+		})
+		x, y, z := float64(v[0]), float64(v[1]), float64(v[2])
+		r, p := ds4.GyroRollPitch(x, y, z)
 		ri := dzscale(10, 50, r)
 		pi := dzscale(10, 50, p)
-		h.gavg.Push(ri, pi)
-		ri, pi = h.gavg.Value()
 		vj2.Axis(vjoy.AxisX).Seti(int(ri))
 		vj2.Axis(vjoy.AxisY).Seti(int(pi))
 		vj2.Update()
@@ -362,12 +366,12 @@ func dzscale(dz, max, v float64) int32 {
 	case v < -dz:
 		v += dz
 		if v < -max {
-			return -1
+			return -axisunit
 		}
 	case dz < v:
 		v -= dz
 		if max < v {
-			return 1
+			return axisunit
 		}
 	default:
 		return 0

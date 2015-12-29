@@ -43,10 +43,13 @@ type State struct {
 	// buttons
 	Button uint32
 
-	// accelerometer
+	// accelerometer vector
 	XAcc, YAcc, ZAcc int16
 
-	// gyroscope
+	// gyroscope vector
+	// x axis points left
+	// y axis points down
+	// z axis points forward
 	XGyro, YGyro, ZGyro int16
 
 	// battery
@@ -146,15 +149,15 @@ func (s *State) Decode(p []byte) error {
 }
 
 func (s *State) GyroRoll() float64 {
-	return GyroRoll(s.XGyro, s.YGyro, s.ZGyro)
+	return GyroRoll(gyroVec(s.XGyro, s.YGyro, s.ZGyro))
 }
 
 func (s *State) GyroPitch() float64 {
-	return GyroPitch(s.XGyro, s.YGyro, s.ZGyro)
+	return GyroPitch(gyroVec(s.XGyro, s.YGyro, s.ZGyro))
 }
 
 func (s *State) GyroRollPitch() (roll, pitch float64) {
-	return GyroRollPitch(s.XGyro, s.YGyro, s.ZGyro)
+	return GyroRollPitch(gyroVec(s.XGyro, s.YGyro, s.ZGyro))
 }
 
 func (s *State) GyroVec() (x, y, z float64) {

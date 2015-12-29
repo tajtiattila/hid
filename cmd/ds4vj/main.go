@@ -5,6 +5,7 @@ import (
 	"flag"
 	"io"
 	"log"
+	"time"
 
 	"github.com/tajtiattila/hid/ds4/ds4util"
 	"github.com/tajtiattila/vjoy"
@@ -16,6 +17,8 @@ func main() {
 	throttle := flag.Bool("throttle", false, "use touchpad as throttle")
 	bumper := flag.Bool("bumper", false, "special bumper shift logic")
 	gyro := flag.Bool("gyro", false, "feed gyro roll/pitch to second device")
+	alpha := flag.Float64("alpha", 1, "alpha value for 1st order gyro smoothing filter")
+	movavg := flag.Duration("movavg", 0, "moving average filter duration for gyro")
 	flag.Parse()
 
 	if !vjoy.Available() {
@@ -57,6 +60,10 @@ func main() {
 		connh.logic = BumpShiftLogic
 	}
 
+	connh.ngf = func() ds4util.Filter {
+		return newFilter(*alpha, *movavg)
+	}
+
 	var dm *ds4util.DeviceManager
 
 	guimain(func(w io.Writer, ch chan<- ds4util.Event) {
@@ -72,4 +79,27 @@ func main() {
 	if dm != nil {
 		dm.Close()
 	}
+}
+
+func newFilter(a float64, d time.Duration) ds4util.Filter {
+	var af, mf ds4util.Filter
+	if 0 < a && a < 1 {
+		af = ds4util.NewAlphaFilter(3, a)
+	}
+	if d > 0 {
+		// make room for 3 readings per Millisecond
+		n := 3 * int(d/time.Millisecond)
+		mf = ds4util.NewMovAvg(3, n, d)
+	}
+
+	if af != nil {
+		if mf == nil {
+			return af
+		}
+		return ds4util.Combine(af, mf)
+	}
+	if mf != nil {
+		return mf
+	}
+	return ds4util.Input
 }

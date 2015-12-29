@@ -1,15 +1,19 @@
 package ds4util
 
 type AlphaFilter struct {
-	Alpha float64
-	v     int
+	A float64
+	V []int
 }
 
-func NewAlphaFilter(a float64) *AlphaFilter {
-	return &AlphaFilter{Alpha: a}
+// NewAlphaFilter returns an AlphaFilter
+// for n values using a for the alpha.
+func NewAlphaFilter(n int, a float64) *AlphaFilter {
+	return &AlphaFilter{A: a, V: make([]int, n)}
 }
 
-func (f *AlphaFilter) Filter(v int) int {
-	f.v += int(alpha * float64(v-f.v))
-	return f.v
+func (f *AlphaFilter) Filter(v []int) []int {
+	for i := range v {
+		f.V[i] += int(f.A * float64(v[i]-f.V[i]))
+	}
+	return f.V
 }

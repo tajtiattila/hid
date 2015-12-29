@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"math"
 	"os"
 	"time"
 
@@ -17,12 +18,17 @@ var (
 	serialno string
 	touch    bool
 	verbose  bool
+
+	alpha  float64
+	movavg time.Duration
 )
 
 func main() {
 	flag.StringVar(&serialno, "sno", "", "Device serial number to use")
 	flag.BoolVar(&touch, "touch", false, "Touch test")
 	flag.BoolVar(&verbose, "v", false, "Verbose output")
+	flag.Float64Var(&alpha, "alpha", 1, "Gyro low pass filter alpha")
+	flag.DurationVar(&movavg, "movavg", 0, "Moving average duration")
 	flag.Parse()
 
 	var dlist []*hid.DeviceInfo
@@ -100,6 +106,18 @@ func main() {
 		}
 	} else {
 		f = InputTest
+		if alpha != 1 {
+			filter = ds4util.NewAlphaFilter(3, alpha)
+		}
+		if movavg != 0 {
+			n := int(movavg/time.Millisecond) * 3
+			a := ds4util.NewMovAvg(3, n, movavg)
+			if filter != ds4util.Input {
+				filter = ds4util.Combine(filter, a)
+			} else {
+				filter = a
+			}
+		}
 	}
 
 	for {
@@ -128,45 +146,20 @@ func main() {
 	}
 }
 
-var gavg = ds4util.NewPosAvg(500, 200*time.Millisecond)
-
-type filter struct {
-	xv [5]float64
-	yv [5]float64
-}
-
-var fr, fp filter
-
-func (f *filter) value(v float64) float64 {
-	const gain = 2.674241096e+06
-
-	f.xv[0] = f.xv[1]
-	f.xv[1] = f.xv[2]
-	f.xv[2] = f.xv[3]
-	f.xv[3] = f.xv[4]
-	f.xv[4] = v / gain
-	f.yv[0] = f.yv[1]
-	f.yv[1] = f.yv[2]
-	f.yv[2] = f.yv[3]
-	f.yv[3] = f.yv[4]
-	f.yv[4] = (f.xv[0] + f.xv[4]) + 4*(f.xv[1]+f.xv[3]) + 6*f.xv[2] +
-		(-0.8768965608 * f.yv[0]) + (3.6227607596 * f.yv[1]) +
-		(-5.6145268496 * f.yv[2]) + (3.8686566679 * f.yv[3])
-	return f.yv[4]
-}
+var filter ds4util.Filter = ds4util.Input
 
 func InputTest(ibuf []byte, s *ds4.State) {
 	fmt.Print("\r")
-	x, y, z := s.GyroVec()
-	r, p := s.GyroRollPitch()
-	//rf, pf := fr.value(r), fp.value(p)
-	const m = 100
-	ri := int32(r * m)
-	pi := int32(p * m)
-	gavg.Push(ri, pi)
-	ri, pi = gavg.Value()
-	r, p = float64(ri)/m, float64(pi)/m
-	fmt.Printf("%5.2f %5.2f %5.2f %4.0f %4.0f %4d", x, y, z, r, p, gavg.N())
+	const m = 100000
+	v := filter.Filter([]int{
+		int(s.XGyro) * m,
+		int(s.YGyro) * m,
+		int(s.ZGyro) * m,
+	})
+	x, y, z := float64(v[0]), float64(v[1]), float64(v[2])
+	r, p := ds4.GyroRollPitch(x, y, z)
+	mag := math.Sqrt(x*x + y*y + z*z)
+	fmt.Printf("%5.2f %5.2f %5.2f %4.0f %4.0f", x/mag, y/mag, z/mag, r, p)
 	/*
 
 		gr, gp, ok := s.GyroRollPitch()
